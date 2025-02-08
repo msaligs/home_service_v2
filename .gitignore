@@ -1,1 +1,6 @@
 /env
+
+Back-End/**/__pycache__/
+Back-End/instance/*
+
+Back-End/*.csv
