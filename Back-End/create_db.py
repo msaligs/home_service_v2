@@ -23,12 +23,19 @@ with app.app_context():
     datastore.commit()
     print("Roles created")
 
+# Creating the Admin
+    print("Creating the Admin")
+    admin = datastore.create_user(name='Admin',email='admin@email.com',password=generate_password_hash('admin123'),mobile='9876543210',active=True,roles=['admin'])
+
 
 # Adding the professional data to user table
     print("Adding the professional data to user table")
     for _ in range(20):
-
-        user = datastore.create_user(name=fake.name(), email=fake.email(), password=generate_password_hash('zaqxsw123'), mobile=f"9{fake.random_int(100000000, 999999999)}" ,active=False, roles=['professional'] )
+        if _ < 10:
+            active = True
+        else:
+            active = False
+        user = datastore.create_user(name=fake.name(), email=fake.email(), password=generate_password_hash('zaqxsw123'), mobile=f"9{fake.random_int(100000000, 999999999)}" ,active=active, roles=['professional'] )
     try:
         datastore.commit()
         print("Professional created")
@@ -40,7 +47,7 @@ with app.app_context():
     print("Adding the user data to user table")
     for _ in range(20):
 
-        user = datastore.create_user(name=fake.name(), email=fake.email(), password=generate_password_hash('zaqxsw123'), mobile=f"9{fake.random_int(100000000, 999999999)}" ,roles=['user'],active=False)
+        user = datastore.create_user(name=fake.name(), email=fake.email(), password=generate_password_hash('zaqxsw123'), mobile=f"9{fake.random_int(100000000, 999999999)}" ,roles=['user'],active=True)
     try:
         datastore.commit()
         print("User created")

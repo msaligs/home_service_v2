@@ -1,6 +1,12 @@
 /env
 
 Back-End/**/__pycache__/
+
 Back-End/instance/*
 
 Back-End/*.csv
+
+Front-End/node_modules/
+Front-End/.vscode/
+Front-End/.vite/
+Front-End/*.log

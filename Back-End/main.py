@@ -3,6 +3,7 @@ from config import DevelopmentConfig
 from application.model import db
 from application.sec import datastore
 from flask_security import Security
+import flask_cors as cors
 
 
 def create_app():
@@ -14,6 +15,7 @@ def create_app():
     app.security = Security(app, datastore)
 
     db.init_app(app)
+    cors.CORS(app)
     with app.app_context():
         import application.views
     return app
