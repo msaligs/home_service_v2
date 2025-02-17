@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from application.model import db, Professional, Category, Location
+from application.model import db, Professional, Category, Location, User
 from application.sec import datastore
 from werkzeug.security import generate_password_hash
 
