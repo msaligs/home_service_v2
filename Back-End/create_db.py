@@ -25,7 +25,7 @@ with app.app_context():
 
 # Creating the Admin
     print("Creating the Admin")
-    admin = datastore.create_user(name='Admin',email='admin@email.com',password=generate_password_hash('admin123'),mobile='9876543210',active=True,roles=['admin'])
+    admin = datastore.create_user(name='Admin',email='admin@email.com',password=generate_password_hash('admin123'),mobile='9876543210',active=True,roles=['admin'], profile_img_url = fake.image_url())
 
 
 # Adding the professional data to user table
@@ -35,7 +35,7 @@ with app.app_context():
             active = True
         else:
             active = False
-        user = datastore.create_user(name=fake.name(), email=fake.email(), password=generate_password_hash('zaqxsw123'), mobile=f"9{fake.random_int(100000000, 999999999)}" ,active=active, roles=['professional'] )
+        user = datastore.create_user(name=fake.name(), email=fake.email(), password=generate_password_hash('zaqxsw123'), mobile=f"9{fake.random_int(100000000, 999999999)}" ,active=active, roles=['professional'], profile_img_url = fake.image_url() )
     try:
         datastore.commit()
         print("Professional created")
@@ -47,7 +47,7 @@ with app.app_context():
     print("Adding the user data to user table")
     for _ in range(20):
 
-        user = datastore.create_user(name=fake.name(), email=fake.email(), password=generate_password_hash('zaqxsw123'), mobile=f"9{fake.random_int(100000000, 999999999)}" ,roles=['user'],active=True)
+        user = datastore.create_user(name=fake.name(), email=fake.email(), password=generate_password_hash('zaqxsw123'), mobile=f"9{fake.random_int(100000000, 999999999)}" ,roles=['user'],active=True, profile_img_url = fake.image_url())
     try:
         datastore.commit()
         print("User created")
@@ -127,7 +127,7 @@ with app.app_context():
 # Adding data to Professional table using Faker
     print("Adding data to Professional table using Faker")
     for i in range(3,23):
-        professional = Professional(user_id=i, category_id=fake.random_int(min=1, max=73), location_id=fake.random_int(min=1, max=50), rating=fake.random_int(min=1, max=5,step=1), experience=fake.random_int(min=1, max=10), available=fake.boolean(chance_of_getting_true=60,), image_url=fake.image_url())
+        professional = Professional(user_id=i, category_id=fake.random_int(min=1, max=73), location_id=fake.random_int(min=1, max=24), rating=fake.random_int(min=1, max=5,step=1), experience=fake.random_int(min=1, max=10), available=fake.boolean(chance_of_getting_true=60,))
         db.session.add(professional)
     try:
         db.session.commit()

@@ -90,16 +90,7 @@ onMounted(fetchUsers)
                 <tbody v-if="users.length">
                     <tr v-for="(user, index) in users" :key="user.id">
                         <td>{{ (currentPage - 1) * perPage + index + 1 }}</td>
-                        <td>
-                            <router-link
-                                v-if="user.role === 'professional'"
-                                :to="'/admin/users/' + user.id"
-                                class="user-link"
-                            >
-                                {{ user.name }}
-                            </router-link>
-                            <span v-else>{{ user.name }}</span>
-                        </td>
+                        <td>{{ user.name }}</td>
                         <td>{{ user.email }}</td>
                         <td>{{ user.mobile }}</td>
                         <td>{{ user.role }}</td>

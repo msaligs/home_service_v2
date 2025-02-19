@@ -10,6 +10,8 @@ from enum import Enum
 class StatusEnum(str, Enum):
     PENDING = 'pending'
     ACCEPTED = 'accepted'
+    VERIFIED = 'verified'
+    REJECTE = 'rejected'
     COMPLETED = 'completed'
     CANCELLED = 'cancelled'
     FAILED = 'failed'
@@ -90,22 +92,26 @@ class Category(db.Model):
 
 class Professional(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=False)
-
+    
     rating = db.Column(db.Float, nullable=True, default=5)
     experience = db.Column(db.Float, nullable=True)
     available = db.Column(db.Boolean, default=True)
-    image_url = db.Column(db.String(120), nullable=True)
+    # image_url = db.Column(db.String(120), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(IST))
     updated_at = db.Column(db.DateTime, nullable=True)
-    verified = db.Column(db.Boolean, default=False)
-    # services = db.relationship('Service', secondary='professional_service', backref=db.backref('professionals', lazy='dynamic'))
+    status = db.Column(db.String(20), default="pending")  # 'pending', 'verified', or 'rejected'
+    status_updated_at = db.Column(db.DateTime, nullable= True)
+    remarks = db.Column(db.String(150))
+    # Define relationships
+    category = db.relationship('Category', backref='professionals', lazy='joined')
+    location = db.relationship('Location', backref='professionals', lazy='joined')
+    user = db.relationship('User', backref='professional', lazy='joined')
 
     def __repr__(self):
-        return f"<Professional ID {self.user_id}>"
+        return f"<Professional {self.id}>"
 
     
     # def update_rating(self, rating):
@@ -177,8 +183,6 @@ class ServiceLocation(db.Model):
     location = db.relationship('Location', backref=db.backref('service_location'))
 
 
-
-
 class ServiceRequest(db.Model):
     __tablename__ = 'service_request'
     id = db.Column(db.Integer, primary_key=True)
@@ -218,7 +222,6 @@ class ServiceRequest(db.Model):
     #     self.completition_date = datetime.now(IST)
     #     db.session.commit()
  
-
 
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
