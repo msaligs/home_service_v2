@@ -67,12 +67,68 @@ const logout = () => {
                                     class="dropdown-item text-info"
                                     to="/admin/onboard-professional"
                                 >
-                                    <i class="pi pi-check"></i>&nbsp; Approve Professionals
+                                    <i class="pi pi-verified"></i>&nbsp; Approve Professionals
                                 </router-link>
                             </li>
                             <li>
                                 <router-link class="dropdown-item" to="/admin/professional">
                                     <i class="pi pi-briefcase"></i>&nbsp; Professionals
+                                </router-link>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Location -->
+                    <li class="nav-item dropdown">
+                        <a
+                            class="nav-link dropdown-toggle"
+                            href="#"
+                            id="userDropdown"
+                            role="button"
+                            data-bs-toggle="dropdown"
+                        >
+                            <i class="pi pi-map"></i>&nbsp; Locations
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <router-link class="dropdown-item" to="/admin/locations">
+                                    <i class="pi pi-list"></i>&nbsp; Manage Locations
+                                </router-link>
+                            </li>
+                            <li>
+                                <router-link
+                                    class="dropdown-item text-info"
+                                    to="/admin/add-location"
+                                >
+                                    <i class="pi pi-plus"></i>&nbsp; Create New Location
+                                </router-link>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Categories -->
+                    <li class="nav-item dropdown">
+                        <a
+                            class="nav-link dropdown-toggle"
+                            href="#"
+                            id="userDropdown"
+                            role="button"
+                            data-bs-toggle="dropdown"
+                        >
+                            <i class="pi pi-bars"></i>&nbsp; Categories
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <router-link class="dropdown-item" to="/admin/categories">
+                                    <i class="pi pi-list"></i>&nbsp; Manage Categories
+                                </router-link>
+                            </li>
+                            <li>
+                                <router-link
+                                    class="dropdown-item text-info"
+                                    to="/admin/add-category"
+                                >
+                                    <i class="pi pi-plus"></i>&nbsp; Create New Categories
                                 </router-link>
                             </li>
                         </ul>

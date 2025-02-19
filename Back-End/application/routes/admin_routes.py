@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from application.model import User,Role, db, Professional, Category, Location
+from application.model import User,Role, db, Professional, Category, Location, Service
 from application.sec import datastore
 from datetime import datetime
 from pytz import timezone
@@ -108,18 +108,91 @@ def user_details(id):
         'updated_at': professional.updated_at.strftime('%Y-%m-%d %H:%M:%S') if professional.updated_at else None   
     }
     return jsonify(professional_details), 200
+
+
 @admin_bp.route('/get-categories', methods=['GET'])
 def get_categories():
     # filter and fetch category data from database which is active
-    categories = Category.query.filter_by(active=True).all()
+    categories = Category.query.filter_by(active=True).order_by(Category.name).all()
 
     # return the data in json format
-    return jsonify([{"id": c.id, "name": c.name} for c in categories])
+    return jsonify([{"id": c.id, "name": c.name, "description":c.description } for c in categories])
+
+
+
+
+
+@admin_bp.route('/add-location', methods=['POST'])
+def add_location():
+    data = request.json
+    city = data.get('city')
+    state = data.get('state')
+
+    if not city or not state:
+        return jsonify({"message": "City and state are required"}), 400
+
+    location = Location(city=city, state=state)
+    db.session.add(location)
+    db.session.commit()
+
+    return jsonify({"message": "Location added successfully"}), 201
+
+@admin_bp.route('/add-category', methods=['POST'])
+def add_category():
+    data = request.json
+    name = data.get('name')
+    description = data.get('description')
+    image_url = data.get('image_url')
+
+    if not name:
+        return jsonify({"message": "Category name is required"}), 400
+
+    category = Category(name=name, description=description, image_url=image_url)
+    db.session.add(category)
+    db.session.commit()
+
+    return jsonify({"message": "Category added successfully"}), 201
+
+@admin_bp.route('/update-category/<int:id>', methods=['PUT'])
+def update_category(id):
+    data = request.json
+    name = data.get('name')
+    description = data.get('description')
+    image_url = data.get('image_url')
+
+    category = Category.query.get(id)
+    if not category:
+        return jsonify({"message": "Category not found"}), 404
+
+    category.name = name
+    category.description = description
+    category.image_url = image_url
+
+    db.session.commit()
+    return jsonify({"message": "Category updated successfully"}), 200
+
+@admin_bp.route('/update-location/<int:id>', methods=['PUT'])
+def update_location(id):
+    data = request.json
+    city = data.get('city')
+    state = data.get('state')
+
+    location = Location.query.get(id)
+    if not location:
+        return jsonify({"message": "Location not found"}), 404
+    
+    location.city = city
+    location.state = state
+
+    db.session.commit()
+    return jsonify({"message": "Location updated successfully"}), 200
+
+
 
 @admin_bp.route('/get-locations', methods=['GET'])
 def get_locations():
     # filter and fetch location data from database which is active
-    locations = Location.query.filter_by(active=True).all()
+    locations = Location.query.filter_by(active=True).order_by(Location.state).all()
 
     # return the data in json format
     return jsonify([{"id": l.id, "city": l.city, "state": l.state} for l in locations])
@@ -224,3 +297,89 @@ def update_professional_status(professional_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Something went wrong", "error": str(e)}), 500
+
+
+
+@admin_bp.route('/get-services', methods=['GET'])
+def get_services():
+    services = Service.query.join(Category).filter(Service.active == True).all()
+    return jsonify([
+        {
+            "id": s.id,
+            "name": s.name,
+            "description": s.description,
+            "image_url": s.image_url,
+            "base_price": s.base_price,
+            "category_name": s.category.name,  # Include category name
+            "active": s.active
+        }
+        for s in services
+    ])
+
+@admin_bp.route('/add-service', methods=['POST'])
+def add_service():
+    data = request.json
+    name = data.get('name')
+    description = data.get('description')
+    image_url = data.get('image_url')
+    base_price = data.get('base_price')
+    category_id = data.get('category_id')
+
+    if not name or not category_id:
+        return jsonify({"message": "Name and category ID are required"}), 400
+
+    service = Service(name=name, description=description, image_url=image_url, base_price=base_price, category_id=category_id)
+    db.session.add(service)
+    db.session.commit()
+
+    return jsonify({"message": "Service added successfully"}), 201
+
+# to delete a service
+@admin_bp.route('/delete-service/<int:id>', methods=['DELETE'])
+def delete_service(id):
+    service = Service.query.get(id)
+    if not service:
+        return jsonify({"message": "Service not found"}), 404
+
+    db.session.delete(service)
+    db.session.commit()
+
+    return jsonify({"message": "Service deleted successfully"}), 200
+
+
+@admin_bp.route('/update-service/<int:id>', methods=['PUT'])
+def update_service(id):
+    data = request.json
+    name = data.get('name')
+    description = data.get('description')
+    image_url = data.get('image_url')
+    base_price = data.get('base_price')
+    category_id = data.get('category_id')
+
+    service = Service.query.get(id)
+    if not service:
+        return jsonify({"message": "Service not found"}), 404
+
+    service.name = name
+    service.description = description
+    service.image_url = image_url
+    service.base_price = base_price
+    service.category_id = category
+
+    db.session.commit()
+
+    return jsonify({"message": "Service updated successfully"}), 200
+
+# @admin_bp.route('/toggle-service/<int:service_id>', methods=['GET'])
+# def toggle_service_activation(service_id):
+#     service = Service.query.get(service_id)
+#     if not service:
+#         return jsonify({"message": "Service not found"}), 404
+
+#     # Toggle service activation status
+#     service.active = not service.active
+#     db.session.commit()
+
+#     return jsonify({"message": f"Service {'activated' if service.active else 'deactivated'} successfully"}), 200
+
+

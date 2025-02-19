@@ -4,6 +4,11 @@ import AdminUsers from '../components/admin/AdminUsers.vue'
 import ProfessionalDetails from '../components/admin/ProfessionalDetails.vue'
 import ApproveProfessional from '../components/admin/ApproveProfessional.vue'
 import AllProfessional from '../components/admin/AllProfessional.vue'
+import Location from '../components/admin/AdminLocation.vue'
+import AddLocation from '../components/admin/AddLocation.vue'
+import AdminCategories from '../components/admin/AdminCategories.vue'
+import AddCategory from '../components/admin/AddCategory.vue'
+import AdminServices from '../components/admin/AdminServices.vue'
 
 export default [
     {
@@ -21,6 +26,11 @@ export default [
                 name: 'approve-professional',
             },
             { path: 'professional', component: AllProfessional, name: 'all-professional' },
+            { path: 'locations', component: Location, name: 'location' },
+            { path: 'add-location', component: AddLocation, name: 'add-location' },
+            { path: 'categories', component: AdminCategories, name: 'admin-categories' },
+            { path: 'add-category', component: AddCategory, name: 'add-category' },
+            { path: 'services', component: AdminServices, name: 'admin-services' },
         ],
     },
 ]
