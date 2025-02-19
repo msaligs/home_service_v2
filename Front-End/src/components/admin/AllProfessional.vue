@@ -132,7 +132,10 @@ onMounted(() => {
                 <tbody>
                     <tr v-for="professional in professionals" :key="professional.id">
                         <td>
-                            <router-link :to="'/admin/users/' + professional.id" class="user-link">
+                            <router-link
+                                :to="'/admin/professional/' + professional.id"
+                                class="user-link"
+                            >
                                 {{ professional.name }}
                             </router-link>
                         </td>

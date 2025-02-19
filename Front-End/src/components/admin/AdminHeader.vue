@@ -19,7 +19,7 @@ const logout = () => {
             <!-- Logo & Website Name -->
             <router-link
                 class="navbar-brand d-flex align-items-center text-decoration-none"
-                to="/admin/dashboard"
+                to="/admin"
             >
                 <img src="/tab-icon.webp" alt="Logo" class="logo me-2" />
                 <span class="fw-bold">Home Service Admin</span>
@@ -38,13 +38,6 @@ const logout = () => {
             <!-- Navbar Links -->
             <div class="collapse navbar-collapse" id="adminNavbar">
                 <ul class="navbar-nav ms-auto">
-                    <!-- Admin Dashboard -->
-                    <li class="nav-item">
-                        <router-link class="nav-link" to="/admin/dashboard">
-                            <i class="pi pi-chart-line"></i>&nbsp; Dashboard
-                        </router-link>
-                    </li>
-
                     <!-- User Management -->
                     <li class="nav-item dropdown">
                         <a
@@ -71,7 +64,7 @@ const logout = () => {
                                 </router-link>
                             </li>
                             <li>
-                                <router-link class="dropdown-item" to="/admin/professional">
+                                <router-link class="dropdown-item" to="/admin/professionals">
                                     <i class="pi pi-briefcase"></i>&nbsp; Professionals
                                 </router-link>
                             </li>
@@ -152,21 +145,8 @@ const logout = () => {
                                 </router-link>
                             </li>
                             <li>
-                                <router-link class="dropdown-item" to="/admin/services/create">
+                                <router-link class="dropdown-item" to="/admin/add-service">
                                     <i class="pi pi-plus"></i>&nbsp; Create New Service
-                                </router-link>
-                            </li>
-                            <li>
-                                <router-link class="dropdown-item" to="/admin/services/update">
-                                    <i class="pi pi-pencil"></i>&nbsp; Update Service
-                                </router-link>
-                            </li>
-                            <li>
-                                <router-link
-                                    class="dropdown-item text-danger"
-                                    to="/admin/services/delete"
-                                >
-                                    <i class="pi pi-trash"></i>&nbsp; Delete Service
                                 </router-link>
                             </li>
                         </ul>

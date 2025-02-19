@@ -3,17 +3,16 @@ from application.model import User,Role, db, Professional, Category, Location, S
 from application.sec import datastore
 from datetime import datetime
 from pytz import timezone
-from sqlalchemy import and_
+from sqlalchemy import and_, text
+from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func
+
 
 
 # from application import db
 IST = timezone('Asia/Kolkata')
 
 admin_bp = Blueprint('admin_bp', __name__)
-
-@admin_bp.route('/dashboard', methods=['GET'])
-def admin_dashboard():
-    return jsonify({"message": "Admin Dashboard Access Granted"}), 200
 
 
 @admin_bp.route('/users', methods=['GET'])
@@ -302,19 +301,25 @@ def update_professional_status(professional_id):
 
 @admin_bp.route('/get-services', methods=['GET'])
 def get_services():
-    services = Service.query.join(Category).filter(Service.active == True).all()
-    return jsonify([
+    services = Service.query.order_by(Service.name).all()
+    
+    result = [
         {
             "id": s.id,
             "name": s.name,
             "description": s.description,
-            "image_url": s.image_url,
+            "image_url": s.image_url or "https://placehold.co/100x100",
+            "category_name": s.category.name if s.category else "N/A",
             "base_price": s.base_price,
-            "category_name": s.category.name,  # Include category name
+            "created_at": s.created_at.strftime('%Y-%m-%d %H:%M'),
+            "updated_at": s.updated_at.strftime('%Y-%m-%d %H:%M') if s.updated_at else "N/A",
             "active": s.active
         }
         for s in services
-    ])
+    ]
+    
+    return jsonify(result)
+
 
 @admin_bp.route('/add-service', methods=['POST'])
 def add_service():
@@ -352,9 +357,7 @@ def update_service(id):
     data = request.json
     name = data.get('name')
     description = data.get('description')
-    image_url = data.get('image_url')
     base_price = data.get('base_price')
-    category_id = data.get('category_id')
 
     service = Service.query.get(id)
     if not service:
@@ -362,9 +365,7 @@ def update_service(id):
 
     service.name = name
     service.description = description
-    service.image_url = image_url
     service.base_price = base_price
-    service.category_id = category
 
     db.session.commit()
 
@@ -383,3 +384,65 @@ def update_service(id):
 #     return jsonify({"message": f"Service {'activated' if service.active else 'deactivated'} successfully"}), 200
 
 
+@admin_bp.route('/dashboard', methods=['GET'])
+def admin_dashboard():
+    stats = {
+        "total_services": Service.query.count(),
+        "total_users": User.query.count(),
+        "total_professionals": Professional.query.count(),
+        "total_categories": Category.query.count(),
+        "total_locations": Location.query.count()
+    }
+
+    # users_by_location = [
+    #     {"name": loc.city, "count": Professional.query.filter_by(location_id=loc.id).count()}
+    #     for loc in Location.query.all()
+    # ]
+    users_by_location = (
+            db.session.query(Location.city, func.count(Professional.id))
+            .join(Professional, Professional.location_id == Location.id)  # Join using foreign key
+            .group_by(Location.city)
+            .all()
+        )   
+    users_by_location = [{"name": city, "count": count} for city, count in users_by_location]
+
+    users_by_category = (
+            db.session.query(Category.name, func.count(Professional.id))
+            .join(Professional, Professional.category_id == Category.id)  # Join using foreign key
+            .group_by(Category.name)
+            .all()
+        )   
+    users_by_category = [{"name": name, "count": count} for name, count in users_by_category]
+
+
+    services_by_category = [
+        {"name": cat.name, "count": Service.query.filter_by(category_id=cat.id).count()}
+        for cat in Category.query.all()
+    ]
+
+
+    # user_growth = db.session.execute(text("""
+    #     SELECT DATE_FORMAT(created_at, '%Y-%m') as month,
+    #         COUNT(CASE WHEN role='user' THEN 1 END) as users,
+    #         COUNT(CASE WHEN role='professional' THEN 1 END) as professionals
+    #     FROM user 
+    #     GROUP BY month
+    # """)).fetchall()
+
+
+    # recent_activity = [
+    #     {"id": s.id, "type": "Service", "name": s.name, "category_location": s.category.name, "date": s.created_at.strftime('%Y-%m-%d')}
+    #     for s in Service.query.order_by(Service.created_at.desc()).limit(5)
+    # ] + [
+    #     {"id": u.id, "type": "User", "name": u.name, "category_location": u.location.city, "date": u.created_at.strftime('%Y-%m-%d')}
+    #     for u in User.query.order_by(User.created_at.desc()).limit(5)
+    # ]
+
+    return jsonify({
+        "stats": stats,
+        "users_by_location": users_by_location,
+        "users_by_category":users_by_category,
+        "services_by_category": services_by_category,
+        # "user_growth": [dict(row) for row in user_growth],
+        # "recent_activity": recent_activity
+    })

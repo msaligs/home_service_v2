@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import api from '../../api'
 import { toast } from 'vue3-toastify'
 
@@ -9,6 +9,7 @@ const editingService = ref(null) // Track service being edited
 const editedName = ref('')
 const editedDescription = ref('')
 const editedBasePrice = ref(0)
+const searchQuery = ref('') // 🔍 Search input
 
 const fetchServices = async () => {
     loading.value = true
@@ -22,16 +23,12 @@ const fetchServices = async () => {
     }
 }
 
-// Toggle Service Active Status
-const toggleServiceStatus = async (id, isActive) => {
-    try {
-        await api.post(`/api/admin/toggle-service/${id}`)
-        toast.success(isActive ? 'Service disabled' : 'Service enabled')
-        fetchServices()
-    } catch (error) {
-        toast.error('Failed to update status')
-    }
-}
+// Filter services based on category name
+const filteredServices = computed(() => {
+    return services.value.filter((service) =>
+        service.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+})
 
 // Delete Service
 const deleteService = async (id) => {
@@ -80,7 +77,17 @@ onMounted(fetchServices)
 
 <template>
     <div class="container mt-4">
-        <h2 class="mb-3">Services</h2>
+        <h2 class="mb-3">Services Management</h2>
+
+        <!-- Search Bar -->
+        <div class="mb-3">
+            <input
+                v-model="searchQuery"
+                type="text"
+                class="form-control"
+                placeholder="Type here to search..."
+            />
+        </div>
 
         <!-- Loading State -->
         <div v-if="loading" class="text-center">
@@ -88,8 +95,8 @@ onMounted(fetchServices)
         </div>
 
         <!-- No Services Found -->
-        <div v-else-if="services.length === 0" class="text-center text-muted">
-            <p>No services available.</p>
+        <div v-else-if="filteredServices.length === 0" class="text-center text-muted">
+            <p>No services found for the given category.</p>
         </div>
 
         <!-- Services Table -->
@@ -99,48 +106,33 @@ onMounted(fetchServices)
                     <tr>
                         <th>Image</th>
                         <th>Name</th>
+                        <th>Description</th>
                         <th>Category</th>
                         <th>Base Price</th>
-                        <th>Status</th>
+                        <th>Created At</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="service in services" :key="service.id">
+                    <tr v-for="service in filteredServices" :key="service.id">
                         <td>
-                            <img
-                                :src="service.image_url || 'https://placehold.co/100x100'"
-                                alt="Service Image"
-                                class="service-img"
-                            />
+                            <img :src="service.image_url" alt="Service Image" class="service-img" />
                         </td>
                         <td v-if="editingService !== service.id">{{ service.name }}</td>
                         <td v-else>
                             <input v-model="editedName" class="form-control" />
+                        </td>
+                        <td v-if="editingService !== service.id">{{ service.description }}</td>
+                        <td v-else>
+                            <textarea v-model="editedDescription" class="form-control"></textarea>
                         </td>
                         <td>{{ service.category_name }}</td>
                         <td v-if="editingService !== service.id">₹{{ service.base_price }}</td>
                         <td v-else>
                             <input v-model="editedBasePrice" type="number" class="form-control" />
                         </td>
+                        <td>{{ service.created_at }}</td>
                         <td>
-                            <span
-                                :class="{
-                                    'badge bg-success': service.active,
-                                    'badge bg-danger': !service.active,
-                                }"
-                            >
-                                {{ service.active ? 'Active' : 'Inactive' }}
-                            </span>
-                        </td>
-                        <td>
-                            <button
-                                class="btn btn-sm btn-warning me-2"
-                                @click="toggleServiceStatus(service.id, service.active)"
-                            >
-                                {{ service.active ? 'Disable' : 'Enable' }}
-                            </button>
-
                             <button
                                 v-if="editingService !== service.id"
                                 class="btn btn-sm btn-primary me-2"
