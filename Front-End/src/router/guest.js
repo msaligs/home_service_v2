@@ -5,12 +5,20 @@ import Register from '@/components/guest/UserRegister.vue'
 import ForgotPassword from '@/components/guest/ForgotPassword.vue'
 import Services from '../components/common/Services.vue'
 import ProfessionalRegister from '../components/guest/ProfessionalRegister.vue'
+import LocationCategory from '../components/common/LocationCategory.vue'
 
 export default [
     {
         path: '/',
         component: GuestLayout,
-        children: [{ path: '', component: Services, name: 'services' }],
+        children: [
+            { path: '', component: LocationCategory, name: 'location-category' },
+            {
+                path: '/services',
+                component: Services,
+                name: 'services',
+            },
+        ],
     },
 
     {
@@ -30,5 +38,11 @@ export default [
         ],
         meta: { requiresGuest: true },
     },
-    { path: '/unauthorized', component: () => import('@/views/guest/Unauthorized.vue') },
+
+    // 🔹 Lazy-loaded Unauthorized Page
+    {
+        path: '/unauthorized',
+        component: () => import('@/views/guest/Unauthorized.vue'),
+        name: 'unauthorized',
+    },
 ]

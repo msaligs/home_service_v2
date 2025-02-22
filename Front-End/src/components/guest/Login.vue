@@ -29,10 +29,15 @@ const login = () => {
                 // Show success message
                 toast.success(response.data.message, { timeout: 3000 })
 
+                const redirectAfterLogin = localStorage.getItem('redirectAfterLogin')
                 // Redirect based on user role
                 setTimeout(() => {
+                    if (redirectAfterLogin) {
+                        router.push(redirectAfterLogin)
+                        localStorage.removeItem('redirectAfterLogin')
+                    }
                     // router.push('/auth')
-                    if (userData.role === 'admin') {
+                    else if (userData.role === 'admin') {
                         router.push('/admin')
                     } else if (userData.role === 'professional') {
                         router.push('/professional')

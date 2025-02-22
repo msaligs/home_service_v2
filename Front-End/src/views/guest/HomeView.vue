@@ -1,6 +1,8 @@
-<script setup></script>
+<script setup>
+import GuestHeader from '@/components/common/GuestHeader.vue'
+</script>
 
 <template>
-  <h1>This is Home views</h1>
-  <router-view />
+    <GuestHeader />
+    <router-view />
 </template>
