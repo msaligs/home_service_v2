@@ -45,6 +45,8 @@ with app.app_context():
 
 # Adding the User data to user table
     print("Adding the user data to user table")
+    user = datastore.create_user(name=fake.name(), email='msaligs@gmail.com', password=generate_password_hash('asdfasdf'), mobile=f"9{fake.random_int(100000000, 999999999)}" ,roles=['user'],active=True, profile_img_url = fake.image_url())
+
     for _ in range(20):
 
         user = datastore.create_user(name=fake.name(), email=fake.email(), password=generate_password_hash('zaqxsw123'), mobile=f"9{fake.random_int(100000000, 999999999)}" ,roles=['user'],active=True, profile_img_url = fake.image_url())

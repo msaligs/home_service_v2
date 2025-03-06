@@ -56,6 +56,11 @@ const logout = () => {
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
+                            <router-link class="dropdown-item" to="/user/bookings">
+                                <i class="pi pi-user"></i> &nbsp;&nbsp; Bookings
+                            </router-link>
+                        </li>
+                        <li>
                             <router-link class="dropdown-item" to="/profile">
                                 <i class="pi pi-user"></i> &nbsp;&nbsp; Profile
                             </router-link>

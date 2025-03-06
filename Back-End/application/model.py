@@ -50,6 +50,9 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return '<User %r>' % self.name
+    
+    def get_id(self):
+        return str(self.id)
 
 
 class Role(db.Model, RoleMixin):
@@ -188,20 +191,22 @@ class ServiceRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    professional_id = db.Column(db.Integer, db.ForeignKey('professional.id'), nullable=True)    #nullable if request is pending ,   after request is accepted, this field will be updated with professional_id
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False)
-    address_id = db.Column(db.Integer, db.ForeignKey('user_address.id'), nullable=False)
+    professional_id = db.Column(db.Integer, db.ForeignKey('professional.id'), nullable=True)    #nullable if request is pending ,   after request is accepted, this field will be updated with professional_id
+    # address_id = db.Column(db.Integer, db.ForeignKey('user_address.id'), nullable=False)
     # payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'), nullable=True)         #before service request payment should be done by user
 
-    status = db.Column(SAEnum(StatusEnum), nullable=False, default=StatusEnum.PENDING)        #current status of the request --> pending, accepted, completed, cancelled
-    request_date = db.Column(db.DateTime, default=lambda: datetime.now(IST))
-    # completition_date = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.Enum(StatusEnum), nullable=False, default=StatusEnum.PENDING)       #current status of the request --> pending, accepted, completed, cancelled
+    request_date = db.Column(db.DateTime, nullable = False, default=lambda: datetime.now(IST))
+    completition_date = db.Column(db.DateTime, nullable=True)
 
     total_price = db.Column(db.Float, nullable=False,default=0)
     remarks = db.Column(db.String(120), nullable=True)
 
-    payment_status = db.Column(SAEnum(StatusEnum), nullable=False, default=StatusEnum.PENDING)          #current status of the request --> pending, paid, failed
-    payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'), nullable=True)         #before service request payment should be done by user
+    service = db.relationship('Service', backref='service_requests', lazy='joined')
+
+    # payment_status = db.Column(SAEnum(StatusEnum), nullable=False, default=StatusEnum.PENDING)          #current status of the request --> pending, paid, failed
+    # payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'), nullable=True)         #before service request payment should be done by user
 
 
     # def accept_service(self, professional_id):
