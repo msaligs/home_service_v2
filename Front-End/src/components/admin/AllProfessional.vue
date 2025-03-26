@@ -18,6 +18,9 @@ const selectedLocation = ref('')
 const fetchProfessionals = async () => {
     loading.value = true
     try {
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
         const response = await api.get('/api/admin/professionals', {
             params: {
                 filter: selectedFilter.value,
@@ -25,6 +28,7 @@ const fetchProfessionals = async () => {
                 category: selectedCategory.value,
                 location: selectedLocation.value,
             },
+            headers: { 'Authentication-Token': token },
         })
         professionals.value = response.data
     } catch (error) {
@@ -37,9 +41,16 @@ const fetchProfessionals = async () => {
 // Fetch categories and locations
 const fetchFilters = async () => {
     try {
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
         const [catRes, locRes] = await Promise.all([
-            api.get('/api/admin/get-categories'),
-            api.get('/api/admin/get-locations'),
+            api.get('/api/admin/get-categories', {
+                headers: { 'Authentication-Token': token },
+            }),
+            api.get('/api/admin/get-locations', {
+                headers: { 'Authentication-Token': token },
+            }),
         ])
         categories.value = catRes.data
         locations.value = locRes.data

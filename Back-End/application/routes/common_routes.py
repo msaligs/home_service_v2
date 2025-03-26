@@ -1,15 +1,16 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app as app
 from application.model import Location, ServiceLocation, Service
 from sqlalchemy import and_
 
 common_bp = Blueprint('common_bp', __name__)
 
-
+cache = app.cache
 
 
 
 
 @common_bp.route('/get-locations', methods=['GET'])
+@cache.cached(timeout=30)
 def get_location():
     state = request.args.get('state', None)
 
@@ -26,6 +27,8 @@ def get_location():
 
 
 @common_bp.route('/service-location/<int:location_id>', methods=['GET'])
+# @cache.cached(timeout=30)
+@cache.memoize(timeout=30)
 def service_location(location_id):
     # filter and fetch category data from database which is active
     service_locations = ServiceLocation.query.filter(
@@ -46,6 +49,7 @@ def service_location(location_id):
 
 
 @common_bp.route('/services/<int:category_id>', methods=['GET'])
+@cache.memoize(timeout=30)
 def get_services_by_category(category_id):
     services = Service.query.filter_by(category_id=category_id, active=True).all()
     return jsonify([

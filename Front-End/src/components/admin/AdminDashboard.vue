@@ -40,7 +40,12 @@ const fetchDashboardData = async () => {
     console.log('fetchDashboardData() started')
 
     try {
-        const response = await api.get('/api/admin/dashboard')
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        const response = await api.get('/api/admin/dashboard', {
+            headers: { 'Authentication-Token': token },
+        })
         console.log('API Response:', response.data)
 
         if (!response || !response.data) {

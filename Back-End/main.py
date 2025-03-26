@@ -8,6 +8,7 @@ import flask_cors as cors
 from flask_mail import Mail
 from flask_restful import Api
 from flask_migrate import Migrate
+from flask_caching import Cache
 
 
 migrate = Migrate()
@@ -18,11 +19,14 @@ def create_app():
 
     app.config['SECRET_KEY'] = "Some random generated key"
     app.config['BUNDLE_ERRORS'] = True
+
+    cache = Cache(app)
     app.security = Security(app, datastore)
 
     db.init_app(app)
     migrate.init_app(app, db)
     api = Api(app)
+    app.cache = cache
 
     cors.CORS(app)
     with app.app_context():

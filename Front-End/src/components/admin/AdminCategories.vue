@@ -14,7 +14,12 @@ const showModal = ref(false)
 const fetchCategories = async () => {
     loading.value = true
     try {
-        const response = await api.get('/api/admin/get-categories')
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        const response = await api.get('/api/admin/get-categories', {
+            headers: { 'Authentication-Token': token },
+        })
         categories.value = response.data
     } catch (error) {
         toast.error('Failed to load categories')
@@ -38,11 +43,20 @@ const closeModal = () => {
 // Update category API call
 const updateCategory = async () => {
     try {
-        await api.put(`/api/admin/update-category/${editingCategory.value.id}`, {
-            name: editingCategory.value.name,
-            description: editingCategory.value.description,
-            image_url: editingCategory.value.image_url,
-        })
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        await api.put(
+            `/api/admin/update-category/${editingCategory.value.id}`,
+            {
+                name: editingCategory.value.name,
+                description: editingCategory.value.description,
+                image_url: editingCategory.value.image_url,
+            },
+            {
+                headers: { 'Authentication-Token': token },
+            }
+        )
         toast.success('Category updated successfully')
         closeModal()
         fetchCategories() // Refresh list

@@ -15,6 +15,9 @@ const perPage = 20
 const fetchUsers = async () => {
     loading.value = true
     try {
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
         const response = await api.get('/api/admin/users', {
             params: {
                 page: currentPage.value,
@@ -22,6 +25,7 @@ const fetchUsers = async () => {
                 role: filterRole.value,
                 status: filterStatus.value,
             },
+            headers: { 'Authentication-Token': token },
         })
         users.value = response.data.users
         totalPages.value = response.data.total_pages
@@ -34,7 +38,12 @@ const fetchUsers = async () => {
 
 const toggleUserStatus = async (id, isActive) => {
     try {
-        await api.get(`/api/admin/toggle_user/${id}`)
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        await api.get(`/api/admin/toggle_user/${id}`, {
+            headers: { 'Authentication-Token': token },
+        })
         toast.success(isActive ? 'User blocked successfully' : 'User unblocked successfully')
         fetchUsers()
     } catch (error) {

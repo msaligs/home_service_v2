@@ -15,10 +15,19 @@ const addLocation = async () => {
 
     loading.value = true
     try {
-        await api.post('/api/admin/add-location', {
-            city: city.value,
-            state: state.value,
-        })
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        await api.post(
+            '/api/admin/add-location',
+            {
+                city: city.value,
+                state: state.value,
+            },
+            {
+                headers: { 'Authentication-Token': token },
+            }
+        )
         toast.success('Location added successfully')
         city.value = ''
         state.value = ''

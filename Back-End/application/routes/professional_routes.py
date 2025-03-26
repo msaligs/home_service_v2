@@ -1,12 +1,15 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app as app
 from application.model import db, Professional, Category, Location, AssignRequest, ServiceRequest, IST, StatusEnum
 from application.sec import datastore
 from werkzeug.security import generate_password_hash
 from flask_security import auth_required, roles_required, current_user
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
+from flask_security import auth_required, roles_required
 
 professional_bp = Blueprint('professional_bp', __name__)
+
+cache = app.cache
 
 @professional_bp.route('/register-professional', methods=['POST'])
 def register_professional():
@@ -67,6 +70,7 @@ def register_professional():
 
 
 @professional_bp.route('/get-categories', methods=['GET'])
+@cache.cached(timeout=30)
 def get_categories():
     # filter and fetch category data from database which is active
     categories = Category.query.filter_by(active=True).all()
@@ -76,6 +80,7 @@ def get_categories():
 
 
 @professional_bp.route('/get-locations', methods=['GET'])
+@cache.cached(timeout=30)
 def get_locations():
     # filter and fetch location data from database which is active
     locations = Location.query.filter_by(active=True).all()
@@ -87,6 +92,7 @@ def get_locations():
 @professional_bp.route('/get-requests', methods=['GET'])
 @auth_required('token')
 @roles_required('professional')
+@cache.memoize(timeout=30)
 def get_request():
     try:
         # Get professional ID from current user
@@ -184,6 +190,7 @@ def update_request_status(request_id):
 @professional_bp.route('/profile', methods=['GET'])
 @auth_required('token')
 @roles_required('professional')
+@cache.memoize(timeout=30)
 def get_professional_profile():
     """Fetch professional profile details"""
     user_id = int(current_user.id)  # Get user ID from JWT token

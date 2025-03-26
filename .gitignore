@@ -26,3 +26,4 @@ Front-End/*.log
 # 🔹 VSCode settings (Optional)
 .vscode/settings.json
 .vscode/tasks.json
+dump.rdb

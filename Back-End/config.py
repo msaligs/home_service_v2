@@ -12,4 +12,10 @@ class DevelopmentConfig(Config):
     DEBUG = True
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///db.sqlite3'
+
+    # cache config
+    CACHE_TYPE = 'RedisCache'
+    CACHE_DEFAULT_TIMEOUT = 30
+    CACHE_REDIS_PORT = 6379
+
     

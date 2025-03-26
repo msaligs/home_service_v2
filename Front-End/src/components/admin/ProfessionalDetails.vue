@@ -13,7 +13,12 @@ const blocking = ref(false)
 const fetchProfessionalDetails = async () => {
     loading.value = true
     try {
-        const response = await api.get(`/api/admin/user_detail/${route.params.id}`)
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        const response = await api.get(`/api/admin/user_detail/${route.params.id}`, {
+            headers: { 'Authentication-Token': token },
+        })
         console.log('API Response:', response.data)
         professional.value = response.data
     } catch (error) {
@@ -29,7 +34,12 @@ const toggleBlockStatus = async () => {
 
     blocking.value = true
     try {
-        await api.get(`/api/admin/toggle_user/${professional.value.user_id}`)
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        await api.get(`/api/admin/toggle_user/${professional.value.user_id}`, {
+            headers: { 'Authentication-Token': token },
+        })
         professional.value.available = !professional.value.available
         toast.success(
             professional.value.available

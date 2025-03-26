@@ -14,7 +14,12 @@ const loading = ref(false)
 // Fetch categories from backend
 const fetchCategories = async () => {
     try {
-        const response = await api.get('/api/admin/get-categories')
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        const response = await api.get('/api/admin/get-categories', {
+            headers: { 'Authentication-Token': token },
+        })
         categories.value = response.data
     } catch (error) {
         toast.error('Failed to load categories')
@@ -35,13 +40,22 @@ const addService = async () => {
 
     loading.value = true
     try {
-        await api.post('/api/admin/add-service', {
-            name: serviceName.value,
-            description: serviceDescription.value,
-            category_id: serviceCategory.value,
-            base_price: serviceBasePrice.value,
-            image_url: serviceImageUrl.value || null,
-        })
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        await api.post(
+            '/api/admin/add-service',
+            {
+                name: serviceName.value,
+                description: serviceDescription.value,
+                category_id: serviceCategory.value,
+                base_price: serviceBasePrice.value,
+                image_url: serviceImageUrl.value || null,
+            },
+            {
+                headers: { 'Authentication-Token': token },
+            }
+        )
         toast.success('Service added successfully!')
 
         // Reset form

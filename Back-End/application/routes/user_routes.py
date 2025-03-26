@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify,abort
+from flask import Blueprint, request, jsonify,current_app as app
 from werkzeug.security import generate_password_hash
 from flask_security import auth_required, current_user, roles_required
 from application.model import db, User, ServiceRequest, StatusEnum, Professional, Service, UserAddress, ServiceLocation, AssignRequest
@@ -9,6 +9,7 @@ from werkzeug.exceptions import BadRequest
 
 user_bp = Blueprint('user_bp', __name__)
 
+cache = app.cache
 
 @user_bp.route('/register_user', methods=['POST'])
 def register_user():
@@ -51,6 +52,7 @@ def register_user():
 @user_bp.route('/user_address', methods=['GET'])  
 @auth_required('token')
 @roles_required('user')
+@cache.memoize(timeout=30)
 def get_user_address():
     user = current_user
     user_address = user.user_address[0] if user.user_address else None
@@ -274,6 +276,7 @@ def book_service(service_id):
 @user_bp.route('/get_bookings', methods=['GET'])
 @auth_required('token')
 @roles_required('user')
+@cache.memoize(timeout=30)
 def get_bookings():
     user_id = current_user.id
     bookings = ServiceRequest.query.filter(ServiceRequest.user_id == user_id).order_by(desc(ServiceRequest.request_date)).all()
@@ -343,6 +346,7 @@ def cancel_booking(booking_id):
 @user_bp.route('/profile', methods=['GET'])
 @auth_required('token')
 @roles_required('user')
+@cache.memoize(timeout=30)
 def get_profile():
     """Fetch user profile details"""
     user_id = int(current_user.id)  # Get user ID from JWT token

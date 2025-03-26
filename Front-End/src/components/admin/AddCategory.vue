@@ -19,7 +19,12 @@ const addCategory = async () => {
 
     loading.value = true
     try {
-        await api.post('/api/admin/add-category', newCategory.value)
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        await api.post('/api/admin/add-category', newCategory.value, {
+            headers: { 'Authentication-Token': token },
+        })
         toast.success('Category added successfully!')
         newCategory.value = { name: '', description: '', image_url: '' } // Reset form
     } catch (error) {

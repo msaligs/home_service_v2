@@ -10,7 +10,12 @@ const waiting = ref(false) // Indicates whether the forced wait is active
 
 const fetchNewProfessionals = async () => {
     try {
-        const response = await api.get('/api/admin/professionals?filter=pending')
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        const response = await api.get('/api/admin/professionals?filter=pending', {
+            headers: { 'Authentication-Token': token },
+        })
         professionals.value = response.data
     } catch (error) {
         toast.error('Failed to load professionals')
@@ -40,7 +45,16 @@ const confirmAction = (id, status) => {
 
 const updateProfessionalStatus = async (id, status) => {
     try {
-        const response = await api.post(`/api/admin/update_professional_status/${id}`, { status })
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        const response = await api.post(
+            `/api/admin/update_professional_status/${id}`,
+            { status },
+            {
+                headers: { 'Authentication-Token': token },
+            }
+        )
         professionals.value = professionals.value.filter((pro) => pro.id !== id)
         toast.success(response.data.message)
     } catch (error) {

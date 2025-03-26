@@ -14,7 +14,12 @@ const searchQuery = ref('') // 🔍 Search input
 const fetchServices = async () => {
     loading.value = true
     try {
-        const response = await api.get('/api/admin/get-services')
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        const response = await api.get('/api/admin/get-services', {
+            headers: { 'Authentication-Token': token },
+        })
         services.value = response.data
     } catch (error) {
         toast.error('Failed to load services')
@@ -35,7 +40,12 @@ const deleteService = async (id) => {
     if (!confirm('Are you sure you want to delete this service?')) return
 
     try {
-        await api.delete(`/api/admin/delete-service/${id}`)
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        await api.delete(`/api/admin/delete-service/${id}`, {
+            headers: { 'Authentication-Token': token },
+        })
         toast.success('Service deleted successfully')
         fetchServices()
     } catch (error) {
@@ -54,11 +64,20 @@ const startEditing = (service) => {
 // Save Updated Service
 const saveEdit = async (id) => {
     try {
-        await api.put(`/api/admin/update-service/${id}`, {
-            name: editedName.value,
-            description: editedDescription.value,
-            base_price: editedBasePrice.value,
-        })
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        await api.put(
+            `/api/admin/update-service/${id}`,
+            {
+                name: editedName.value,
+                description: editedDescription.value,
+                base_price: editedBasePrice.value,
+            },
+            {
+                headers: { 'Authentication-Token': token },
+            }
+        )
         toast.success('Service updated successfully')
         editingService.value = null
         fetchServices()

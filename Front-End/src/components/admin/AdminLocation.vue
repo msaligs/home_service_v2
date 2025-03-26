@@ -12,7 +12,12 @@ const showEditModal = ref(false)
 const fetchLocations = async () => {
     loading.value = true
     try {
-        const response = await api.get('/api/admin/get-locations')
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
+        const response = await api.get('/api/admin/get-locations', {
+            headers: { 'Authentication-Token': token },
+        })
         locations.value = response.data
     } catch (error) {
         toast.error('Failed to load locations')
@@ -30,9 +35,15 @@ const openEditModal = (location) => {
 // Update Location
 const updateLocation = async () => {
     try {
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Token missing!')
+
         await api.put(
             `/api/admin/update-location/${editingLocation.value.id}`,
-            editingLocation.value
+            editingLocation.value,
+            {
+                headers: { 'Authentication-Token': token },
+            }
         )
         toast.success('Location updated successfully')
         showEditModal.value = false

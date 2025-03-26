@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app as app
 from application.model import User,Role, db, Professional, Category, Location, Service
 from application.sec import datastore
 from datetime import datetime
@@ -6,8 +6,10 @@ from pytz import timezone
 from sqlalchemy import and_, text
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
+from flask_security import auth_required, roles_required
 
 
+cache = app.cache
 
 # from application import db
 IST = timezone('Asia/Kolkata')
@@ -16,6 +18,9 @@ admin_bp = Blueprint('admin_bp', __name__)
 
 
 @admin_bp.route('/users', methods=['GET'])
+@auth_required('token')
+@roles_required('admin')
+# @cache.cached(timeout=60)
 def users():
     # Get page number and items per page from request args (default: page 1, 10 items per page)
     page = request.args.get('page', 1, type=int)
@@ -61,6 +66,8 @@ def users():
 
 
 @admin_bp.route('/toggle_user/<int:user_id>', methods=['GET'])
+@auth_required('token')
+@roles_required('admin')
 def toggle_user_activation(user_id):
     user = datastore.find_user(id=user_id)
     
@@ -83,6 +90,8 @@ def toggle_user_activation(user_id):
 
 
 @admin_bp.route('/user_detail/<int:id>', methods=['GET'])
+@auth_required('token')
+@roles_required('admin')
 def user_details(id):
     # Get the professional record for the user
     professional = Professional.query.filter_by(id=id).first()
@@ -110,6 +119,9 @@ def user_details(id):
 
 
 @admin_bp.route('/get-categories', methods=['GET'])
+@auth_required('token')
+@roles_required('admin')
+@cache.cached(timeout=60)
 def get_categories():
     # filter and fetch category data from database which is active
     categories = Category.query.filter_by(active=True).order_by(Category.name).all()
@@ -122,6 +134,8 @@ def get_categories():
 
 
 @admin_bp.route('/add-location', methods=['POST'])
+@auth_required('token')
+@roles_required('admin')
 def add_location():
     data = request.json
     city = data.get('city')
@@ -137,6 +151,8 @@ def add_location():
     return jsonify({"message": "Location added successfully"}), 201
 
 @admin_bp.route('/add-category', methods=['POST'])
+@auth_required('token')
+@roles_required('admin')
 def add_category():
     data = request.json
     name = data.get('name')
@@ -153,6 +169,8 @@ def add_category():
     return jsonify({"message": "Category added successfully"}), 201
 
 @admin_bp.route('/update-category/<int:id>', methods=['PUT'])
+@auth_required('token')
+@roles_required('admin')
 def update_category(id):
     data = request.json
     name = data.get('name')
@@ -171,6 +189,8 @@ def update_category(id):
     return jsonify({"message": "Category updated successfully"}), 200
 
 @admin_bp.route('/update-location/<int:id>', methods=['PUT'])
+@auth_required('token')
+@roles_required('admin')
 def update_location(id):
     data = request.json
     city = data.get('city')
@@ -189,6 +209,9 @@ def update_location(id):
 
 
 @admin_bp.route('/get-locations', methods=['GET'])
+@auth_required('token')
+@roles_required('admin')
+@cache.cached(timeout=60)
 def get_locations():
     # filter and fetch location data from database which is active
     locations = Location.query.filter_by(active=True).order_by(Location.state).all()
@@ -198,6 +221,8 @@ def get_locations():
  
 
 @admin_bp.route('/professionals', methods=['GET'])
+@auth_required('token')
+@roles_required('admin')
 def get_professionals():
     filter_status = request.args.get('filter', 'all')  # Get filter from query params
     search_query = request.args.get('search', '').strip().lower()  # Get search input
@@ -264,6 +289,8 @@ def get_professionals():
 
 
 @admin_bp.route('/update_professional_status/<int:professional_id>', methods=['POST'])
+@auth_required('token')
+@roles_required('admin')
 def update_professional_status(professional_id):
     data = request.json  # Expecting {"status": "verified"} or {"status": "rejected"} 
 
@@ -300,6 +327,9 @@ def update_professional_status(professional_id):
 
 
 @admin_bp.route('/get-services', methods=['GET'])
+@auth_required('token')
+@roles_required('admin')
+@cache.cached(timeout=60)
 def get_services():
     services = Service.query.order_by(Service.name).all()
     
@@ -322,6 +352,8 @@ def get_services():
 
 
 @admin_bp.route('/add-service', methods=['POST'])
+@auth_required('token')
+@roles_required('admin')
 def add_service():
     data = request.json
     name = data.get('name')
@@ -341,6 +373,8 @@ def add_service():
 
 # to delete a service
 @admin_bp.route('/delete-service/<int:id>', methods=['DELETE'])
+@auth_required('token')
+@roles_required('admin')
 def delete_service(id):
     service = Service.query.get(id)
     if not service:
@@ -353,6 +387,8 @@ def delete_service(id):
 
 
 @admin_bp.route('/update-service/<int:id>', methods=['PUT'])
+@auth_required('token')
+@roles_required('admin')
 def update_service(id):
     data = request.json
     name = data.get('name')
@@ -373,6 +409,9 @@ def update_service(id):
 
 
 @admin_bp.route('/dashboard', methods=['GET'])
+@auth_required('token')
+@roles_required('admin')
+@cache.cached(timeout=60)
 def admin_dashboard():
     stats = {
         "total_services": Service.query.count(),

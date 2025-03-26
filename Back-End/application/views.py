@@ -6,9 +6,16 @@ from application.model import db, User, Professional
 import random, string
 from datetime import datetime
 
+
+cache = app.cache
 @app.get('/')
 def home():
     return render_template('index.html')
+
+@app.get('/cache')
+@cache.cached(timeout=30)
+def cache():
+    return {"time": datetime.now()}
 
 @app.route('/user_login', methods=['POST'])
 def user_login():
