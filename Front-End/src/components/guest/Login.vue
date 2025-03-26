@@ -44,7 +44,7 @@ const login = () => {
                     } else {
                         router.push('/')
                     }
-                }, 2500)
+                }, 1000)
             }
         })
         .catch((error) => {

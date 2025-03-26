@@ -33,6 +33,7 @@ const bookService = async (serviceId, price) => {
     const token = localStorage.getItem('token')
     if (!token) {
         console.error('Token not found!')
+        toast.warn('⚠️ Authentication token missing. Please log in.', { autoClose: 3000 })
         return
     }
 
@@ -44,7 +45,7 @@ const bookService = async (serviceId, price) => {
     try {
         const response = await api.post(
             `/api/user/book_service/${serviceId}`,
-            { price: price },
+            { price },
             {
                 headers: {
                     'Authentication-Token': token,
@@ -52,52 +53,63 @@ const bookService = async (serviceId, price) => {
             }
         )
 
-        // Extract response data
-        const { message, data } = response.data
+        const { message, status, data } = response.data
 
-        // Store booking details & open confirmation modal
-        bookingDetails.value = {
-            message,
-            serviceId: data.service_id,
-            price: data.price,
-            remarks: data.remarks || 'No remarks',
+        if (status.toLowerCase() === 'success') {
+            // Store booking details & open confirmation modal
+            bookingDetails.value = {
+                message: message,
+                service_name: data?.service_name || 'Unknown Service',
+                price: data?.price || price,
+                remarks: data?.remarks || 'No remarks',
+            }
+
+            isBookingConfirmed.value = true
+            toast.success(`🎉 ${message}`, { autoClose: 3000 })
+        } else {
+            toast.warn(`⚠️ ${message}`, { autoClose: 3000 })
+            throw new Error('Failed to book service.')
         }
-
-        isBookingConfirmed.value = true
-        toast.success('🎉 Booking successful!', { autoClose: 3000 })
     } catch (error) {
         console.error('Error booking service:', error.response?.data || error.message)
 
         if (error.response) {
-            // to redirect to login page if token is invalid
-            if (error.response.status === 401) {
-                toast.warn('⚠️ You have been logout.! Please login to book a service.', {
-                    autoClose: 3000,
-                })
+            const { status, data } = error.response
+            const errorMessage = data?.message || 'Failed to book service.'
+
+            // Handle Unauthorized (Session Expired)
+            if (status === 401) {
+                toast.warn('⚠️ Session expired. Please log in again.', { autoClose: 3000 })
                 localStorage.setItem('redirectAfterLogin', route.fullPath)
                 localStorage.removeItem('token')
                 router.push('/auth')
                 return
             }
 
-            const errorMessage = error.response.data.error || 'Failed to book service.'
-
-            if (error.response?.status === 400 || error.response?.status === 409) {
-                if (
-                    errorMessage.includes('active request') &&
-                    error.response.data.existing_request
-                ) {
-                    const existingRequest = error.response.data.existing_request
+            // Handle Bad Request (Validation Errors)
+            if (status === 400) {
+                toast.warn(`⚠️ ${errorMessage}`, { autoClose: 4000 })
+            }
+            // Handle Conflict (Existing Request)
+            else if (status === 409) {
+                if (data?.existing_request) {
+                    const existingRequest = data.existing_request
                     toast.warn(
-                        `⚠️ ${errorMessage} (Request ID: ${existingRequest.id}, Status: ${existingRequest.status}, Date: ${existingRequest.requested_at})`,
-                        { autoClose: 4000 }
+                        `⚠️ ${errorMessage}\n📌 Request ID: ${existingRequest.id}\n📅 Date: ${existingRequest.requested_at}\n📍 Status: ${existingRequest.status}`,
+                        { autoClose: 5000 }
                     )
                 } else {
                     toast.warn(`⚠️ ${errorMessage}`, { autoClose: 3000 })
                 }
-            } else if (error.response.status === 500) {
-                toast.error('❌ Server error. Please try again later.', { autoClose: 3000 })
-            } else {
+            }
+            // Handle Server Errors
+            else if (status === 500) {
+                toast.error(`❌ Server error: ${data?.details || 'Please try again later.'}`, {
+                    autoClose: 4000,
+                })
+            }
+            // Handle Other Errors
+            else {
                 toast.error(`❌ ${errorMessage}`, { autoClose: 3000 })
             }
         } else {
@@ -153,6 +165,7 @@ const fetchServices = async () => {
             })) || []
     } catch (error) {
         console.error('Error fetching services:', error)
+        toast.error('❌ Failed to load services. Please try again later.', { autoClose: 3000 })
     } finally {
         isLoading.value = false
     }
@@ -276,7 +289,7 @@ onMounted(() => {
                     </div>
                     <div class="modal-body text-center">
                         <p class="text-muted">{{ bookingDetails.message }}</p>
-                        <p><strong>🆔 Service ID:</strong> {{ bookingDetails.serviceId }}</p>
+                        <p><strong> Service Name:</strong> {{ bookingDetails.service_name }}</p>
                         <p><strong>💰 Price:</strong> ₹{{ bookingDetails.price }}</p>
                         <p><strong>📌 Remarks:</strong> {{ bookingDetails.remarks }}</p>
                     </div>

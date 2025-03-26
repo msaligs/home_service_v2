@@ -37,13 +37,13 @@ const logout = () => {
                         </router-link>
                     </li>
                     <li>
-                        <router-link class="dropdown-item" to="/user/profile">
-                            <i class="pi pi-user"></i> &nbsp;&nbsp; Profile
+                        <router-link class="dropdown-item" to="/user/address">
+                            <i class="pi pi-user"></i> &nbsp;&nbsp; Address
                         </router-link>
                     </li>
                     <li>
-                        <router-link class="dropdown-item" to="/user/settings">
-                            <i class="pi pi-cog"></i> &nbsp;&nbsp; Settings
+                        <router-link class="dropdown-item" to="/user/profile">
+                            <i class="pi pi-cog"></i> &nbsp;&nbsp; Profile
                         </router-link>
                     </li>
                     <li><hr class="dropdown-divider" /></li>

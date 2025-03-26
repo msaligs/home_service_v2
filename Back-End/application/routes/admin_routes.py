@@ -371,18 +371,6 @@ def update_service(id):
 
     return jsonify({"message": "Service updated successfully"}), 200
 
-# @admin_bp.route('/toggle-service/<int:service_id>', methods=['GET'])
-# def toggle_service_activation(service_id):
-#     service = Service.query.get(service_id)
-#     if not service:
-#         return jsonify({"message": "Service not found"}), 404
-
-#     # Toggle service activation status
-#     service.active = not service.active
-#     db.session.commit()
-
-#     return jsonify({"message": f"Service {'activated' if service.active else 'deactivated'} successfully"}), 200
-
 
 @admin_bp.route('/dashboard', methods=['GET'])
 def admin_dashboard():
@@ -394,10 +382,6 @@ def admin_dashboard():
         "total_locations": Location.query.count()
     }
 
-    # users_by_location = [
-    #     {"name": loc.city, "count": Professional.query.filter_by(location_id=loc.id).count()}
-    #     for loc in Location.query.all()
-    # ]
     users_by_location = (
             db.session.query(Location.city, func.count(Professional.id))
             .join(Professional, Professional.location_id == Location.id)  # Join using foreign key
@@ -420,29 +404,10 @@ def admin_dashboard():
         for cat in Category.query.all()
     ]
 
-
-    # user_growth = db.session.execute(text("""
-    #     SELECT DATE_FORMAT(created_at, '%Y-%m') as month,
-    #         COUNT(CASE WHEN role='user' THEN 1 END) as users,
-    #         COUNT(CASE WHEN role='professional' THEN 1 END) as professionals
-    #     FROM user 
-    #     GROUP BY month
-    # """)).fetchall()
-
-
-    # recent_activity = [
-    #     {"id": s.id, "type": "Service", "name": s.name, "category_location": s.category.name, "date": s.created_at.strftime('%Y-%m-%d')}
-    #     for s in Service.query.order_by(Service.created_at.desc()).limit(5)
-    # ] + [
-    #     {"id": u.id, "type": "User", "name": u.name, "category_location": u.location.city, "date": u.created_at.strftime('%Y-%m-%d')}
-    #     for u in User.query.order_by(User.created_at.desc()).limit(5)
-    # ]
-
     return jsonify({
         "stats": stats,
         "users_by_location": users_by_location,
         "users_by_category":users_by_category,
         "services_by_category": services_by_category,
-        # "user_growth": [dict(row) for row in user_growth],
-        # "recent_activity": recent_activity
+
     })

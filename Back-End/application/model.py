@@ -9,9 +9,10 @@ from enum import Enum
 
 class StatusEnum(str, Enum):
     PENDING = 'pending'
+    ASSIGNED = 'assigned'
     ACCEPTED = 'accepted'
     VERIFIED = 'verified'
-    REJECTE = 'rejected'
+    REJECTED = 'rejected'
     COMPLETED = 'completed'
     CANCELLED = 'cancelled'
     FAILED = 'failed'
@@ -71,7 +72,7 @@ role_user = db.Table('role_user',
 class Location(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     city = db.Column(db.String(120), nullable=False,unique=True)
-    state = db.Column(db.String(120), nullable=False,)
+    state = db.Column(db.String(120), nullable=False)
     # pincode = db.Column(db.String(120), nullable=False, unique=True)
     # created_at = db.Column(db.DateTime, default=datetime.now(IST))
     active = db.Column(db.Boolean,default=True)
@@ -111,17 +112,10 @@ class Professional(db.Model):
     # Define relationships
     category = db.relationship('Category', backref='professionals', lazy='joined')
     location = db.relationship('Location', backref='professionals', lazy='joined')
-    user = db.relationship('User', backref='professional', lazy='joined')
+    user = db.relationship('User', uselist=False, backref='professional')
 
     def __repr__(self):
         return f"<Professional {self.id}>"
-
-    
-    # def update_rating(self, rating):
-    #     """Update the rating of the professional."""
-    #     self.rating = rating
-    #     db.session.commit()
-    
 
 
 # to store user addresses to provide service --> one-to-many relationship with user
@@ -132,9 +126,13 @@ class UserAddress(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     address = db.Column(db.String(120), nullable=False)
-    city = db.Column(db.String(120), nullable=False)
-    state = db.Column(db.String(120), nullable=False)
+    # city = db.Column(db.String(120), nullable=False)
+    # state = db.Column(db.String(120), nullable=False)
+    location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=False)
     pincode = db.Column(db.String(120), nullable=False)
+
+    user = db.relationship('User', backref='user_address', lazy='joined')
+    location = db.relationship('Location', backref='user_address', lazy='joined')
 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(IST))
     updated_at = db.Column(db.DateTime, nullable=True)
@@ -160,7 +158,6 @@ class Service(db.Model):
     __table_args__ = (
         CheckConstraint('base_price >= 10 AND base_price <= 1000', name='check_price_positive'),
     )
-
     def __repr__(self):
         return '<Service %r>' % self.name
 
@@ -174,7 +171,6 @@ class ServiceLocation(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     # location_id = db.Column(db.String(120), db.ForeignKey('location.id'), nullable=False)
     location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=False)
-
 
     # surcharge = db.Column(db.Float, nullable=False, default=0)
     active = db.Column(db.Boolean, default=True)
@@ -193,8 +189,7 @@ class ServiceRequest(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False)
     professional_id = db.Column(db.Integer, db.ForeignKey('professional.id'), nullable=True)    #nullable if request is pending ,   after request is accepted, this field will be updated with professional_id
-    # address_id = db.Column(db.Integer, db.ForeignKey('user_address.id'), nullable=False)
-    # payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'), nullable=True)         #before service request payment should be done by user
+    location_id = db.Column(db.Integer, db.ForeignKey('location.id'), nullable=False)
 
     status = db.Column(db.Enum(StatusEnum), nullable=False, default=StatusEnum.PENDING)       #current status of the request --> pending, accepted, completed, cancelled
     request_date = db.Column(db.DateTime, nullable = False, default=lambda: datetime.now(IST))
@@ -204,29 +199,21 @@ class ServiceRequest(db.Model):
     remarks = db.Column(db.String(120), nullable=True)
 
     service = db.relationship('Service', backref='service_requests', lazy='joined')
+    locaation = db.relationship('Location', backref='service_requests', lazy='joined')
+    user = db.relationship('User', backref='service_requests', lazy='joined')
+    professional = db.relationship('Professional', backref='service_requests', lazy='joined')
 
-    # payment_status = db.Column(SAEnum(StatusEnum), nullable=False, default=StatusEnum.PENDING)          #current status of the request --> pending, paid, failed
-    # payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'), nullable=True)         #before service request payment should be done by user
 
 
-    # def accept_service(self, professional_id):
-    #     """Accept the service request by professional."""
-    #     self.professional_id = professional_id
-    #     self.status = 'accepted'
-    #     db.session.commit()
+class AssignRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    service_request_id = db.Column(db.Integer, db.ForeignKey('service_request.id'), nullable=False)
+    professional_id = db.Column(db.Integer, db.ForeignKey('professional.id'), nullable=False)
+    status = db.Column(SAEnum(StatusEnum), nullable=False, default=StatusEnum.PENDING)         #current status of the request --> pending, accepted, completed, cancelled
+    assign_date = db.Column(db.DateTime, default=lambda: datetime.now(IST))
+    accept_reject_date = db.Column(db.DateTime, nullable=True)
+    completition_date = db.Column(db.DateTime, nullable=True)
 
-    # def complete_service(self):
-    #     """Mark the service request as completed."""
-    #     self.status = 'completed'
-    #     self.completition_date = datetime.now(IST)
-    #     db.session.commit()
-
-    # def cancel_service(self):
-    #     """Mark the service request as cancelled."""
-    #     self.status = 'cancelled'
-    #     self.completition_date = datetime.now(IST)
-    #     db.session.commit()
- 
 
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -241,18 +228,6 @@ class Payment(db.Model):
 
     remarks = db.Column(db.String(120), nullable=True)
 
-
-class assign_request(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    service_request_id = db.Column(db.Integer, db.ForeignKey('service_request.id'), nullable=False)
-    profession_id = db.Column(db.Integer, db.ForeignKey('professional.id'), nullable=False)
-    status = db.Column(SAEnum(StatusEnum), nullable=False, default=StatusEnum.PENDING)         #current status of the request --> pending, accepted, completed, cancelled
-    assign_date = db.Column(db.DateTime, default=lambda: datetime.now(IST))
-    accept_date = db.Column(db.DateTime, nullable=True)
-    completition_date = db.Column(db.DateTime, nullable=True)
-
-
-
 class ServiceReview(db.Model):
     __tablename__ = 'service_review'
     id = db.Column(db.Integer, primary_key=True)
@@ -262,7 +237,7 @@ class ServiceReview(db.Model):
     review_text = db.Column(db.String(120), nullable=True)
 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(IST))
-    # updated_at = db.Column(db.DateTime, nullable=True)
+    updated_at = db.Column(db.DateTime, nullable=True)
     
 class ProfessionalReview(db.Model):
     __tablename__ = 'professional_review'
@@ -273,4 +248,4 @@ class ProfessionalReview(db.Model):
     review_text = db.Column(db.String(120), nullable=True)
 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(IST))
-    # updated_at = db.Column(db.DateTime, nullable=True)
+    updated_at = db.Column(db.DateTime, nullable=True)

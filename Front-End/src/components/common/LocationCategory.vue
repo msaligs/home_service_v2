@@ -20,7 +20,7 @@ const fetchLocations = async () => {
         const response = await api.get('/api/common/get-locations')
         locations.value = response.data || []
     } catch (error) {
-        console.error('Error fetching locations:', error)
+        // console.error('Error fetching locations:', error)
         toast.error('Failed to load locations.', { autoClose: 3000 }) // ✅ Corrected toast syntax
     }
 }

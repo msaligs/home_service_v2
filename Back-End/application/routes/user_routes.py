@@ -1,10 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify,abort
 from werkzeug.security import generate_password_hash
 from flask_security import auth_required, current_user, roles_required
-from application.model import db, User, ServiceRequest, StatusEnum
+from application.model import db, User, ServiceRequest, StatusEnum, Professional, Service, UserAddress, ServiceLocation, AssignRequest
 from application.sec import datastore
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import desc
+from sqlalchemy import desc, and_
+from werkzeug.exceptions import BadRequest
 
 user_bp = Blueprint('user_bp', __name__)
 
@@ -45,73 +46,229 @@ def register_user():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@user_bp.route('/user_address', methods=['GET'])  
+@auth_required('token')
+@roles_required('user')
+def get_user_address():
+    user = current_user
+    user_address = user.user_address[0] if user.user_address else None
+    print(user_address)
+    if user_address:
+        return jsonify({
+            "message": "User address found",
+            "data": {
+                "address": user_address.address,
+                "city": user_address.location.city,
+                "state": user_address.location.state,
+                "pincode": user_address.pincode
+            }
+        }), 200
+    return jsonify({"message": "User address not found"}), 404 
+
+@user_bp.route('/add_address', methods=['POST'])
+@auth_required('token')
+@roles_required('user')
+def add_address():
+    try:
+        data = request.get_json()
+        user = current_user
+        address = data.get("address")
+        location_id = data.get("location_id")
+        pincode = data.get("pincode")
+
+        if not all([address, location_id, pincode]):
+            return jsonify({"error": "All fields are required"}), 400
+
+        # Create a new UserAddress entry
+        new_address = UserAddress(
+            user_id=user.id,
+            address=address,
+            location_id=location_id,
+            pincode=pincode
+        )
+
+        db.session.add(new_address)  # Add to session
+        db.session.commit()  # Commit changes
+
+        return jsonify({"message": "Address added successfully"}), 201
+
+    except Exception as e:
+        db.session.rollback()  # Rollback in case of error
+        return jsonify({"error": str(e)}), 500
+
+
+
+@user_bp.route('/update_address', methods=['PUT'])
+@auth_required('token')
+@roles_required('user')
+def update_address():
+    try:
+        data = request.get_json()
+        user = current_user
+        address = data.get("address")
+        location_id = data.get("location_id")
+        pincode = data.get("pincode")
+
+        if not all([address, location_id, pincode]):
+            return jsonify({"error": "All fields are required"}), 400
+
+        # Fetch the existing address
+        user_address = user.user_address[0] if user.user_address else None
+        if not user_address:
+            return jsonify({"error": "User address not found"}), 404
+
+        # Update the address fields
+        user_address.address = address
+        user_address.location_id = location_id
+        user_address.pincode = pincode
+
+        db.session.commit()  # Commit changes
+
+        return jsonify({"message": "Address updated successfully"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+    
     
 
 @user_bp.route('/book_service/<int:service_id>', methods=['POST'])
 @auth_required('token')
+@roles_required('user')
 def book_service(service_id):
     try:
-        # Get JSON payload
+        # Check if the service exists
+        service = Service.query.get(service_id)
+        if not service:
+            return jsonify({
+                "message": "Requested service not found.",
+                "status": "error"
+            }), 404
+        
+
+        # Extract and validate JSON payload
         data = request.get_json()
         if not data:
-            return jsonify({"error": "Invalid or missing JSON payload"}), 400
+            return jsonify({
+                "message": "Requested details missing.",
+                "status": "error"
+            }), 400
 
         # Extract and validate required fields
-        user_id = int(current_user.id)  # Ensure it gets an integer ID
-        price = data.get("price", None)  # Explicit default value
-        remarks = data.get("remarks", "")  # Default to empty string
+        user_id = int(current_user.id)  
+        user_location = current_user.user_address[0] if current_user.user_address else None  
 
+        if not user_location:
+            return jsonify({
+                "message": "Please add your address before booking a service.",
+                "status": "error"
+            }), 400
+
+        # Validate if service is available in user's location
+        user_location_id = user_location.location_id
+        selected_service_category_id = service.category_id
+
+        service_location = ServiceLocation.query.filter(
+            and_(ServiceLocation.location_id == user_location_id, 
+                 ServiceLocation.category_id == selected_service_category_id)
+        ).first()
+
+        if not service_location:
+            return jsonify({
+                "message": "This Category services are not available at your location. Please update your city.",
+                "status": "error"
+            }), 400
+
+        # Validate price
+        price = data.get("price")
         if price is None:
-            return jsonify({"error": "Price is required"}), 400
+            return jsonify({
+                "message": "Price is required.",
+                "status": "error"
+            }), 400
 
-        # Check if the user already has a pending or accepted request for the service
+        category_id = service.category.id
+        remarks = data.get("remarks", "")  
+
+        # Check if user already has an active request
         existing_request = ServiceRequest.query.filter(
             ServiceRequest.user_id == user_id,
             ServiceRequest.service_id == service_id,
-            ServiceRequest.status.in_([StatusEnum.PENDING, StatusEnum.ACCEPTED])  # Use Enum values
+            ServiceRequest.status.in_([StatusEnum.PENDING, StatusEnum.ACCEPTED, StatusEnum.ASSIGNED])
         ).first()
 
         if existing_request:
             return jsonify({
-                "error": "You already have an active request for this service.",
-                "existing_request": {
-                    "id": existing_request.id,
-                    "status": existing_request.status.name,  # Convert Enum to string
-                    "requested_at": existing_request.request_date
-                }
+                "message": "You already have an active request for this service.",
+                "status": "error"
             }), 409
 
+        # Find an available professional
+        professional = Professional.query.filter(
+            Professional.user.has(active=True),
+            Professional.available == True,
+            # Professional.category_id == category_id,  
+            Professional.location_id == user_location_id
+        ).first()
 
-        # Create and store the booking
+        # Create and save the booking request
         booking = ServiceRequest(
             user_id=user_id,
             service_id=service_id,
+            location_id=user_location_id,
+            professional_id=professional.id if professional else None,
             total_price=price,
             remarks=remarks,
-            status=StatusEnum.PENDING
+            status=StatusEnum.ASSIGNED if professional else StatusEnum.PENDING
         )
-        
         db.session.add(booking)
-        db.session.commit()  # Commit the transaction
-        # import time
-        # time.sleep(10)
+        db.session.flush()
+
+        if professional:
+            assign = AssignRequest(service_request_id=booking.id, professional_id=professional.id, status = StatusEnum.ASSIGNED)
+            db.session.add(assign)
+
+        db.session.commit()
+
         return jsonify({
-            "message": "Booking successful",
+            "message": "Booking successful.",
+            "status": "success",
             "data": {
-            "user_id": user_id,
-            "service_id": service_id,
-            "price": price,
-            "remarks": remarks
+                "user_id": user_id,
+                "service_id": service_id,
+                "service_name": service.name,
+                "Professional": professional.user.name if professional else "Not assigned",
+                "price": price,
+                "remarks": remarks
             }
         }), 201
+    
+    
 
-    except IntegrityError:
-        db.session.rollback()  # Rollback in case of DB errors
-        return jsonify({"error": "Database integrity error. Please try again."}), 500
+    except IntegrityError as e:
+        db.session.rollback()
+        return jsonify({
+            "message": "Database integrity error. Please try again.",
+            "status": "error",
+            "details": str(e)
+        }), 500
+
+    except BadRequest as e:
+        return jsonify({
+            "message": "Invalid request data.",
+            "status": "error",
+            "details": str(e)
+        }), 400
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+        return jsonify({
+            "message": "An unexpected error occurred.",
+            "status": "error",
+            "details": str(e)
+        }), 500
 
 
 @user_bp.route('/get_bookings', methods=['GET'])
@@ -130,6 +287,8 @@ def get_bookings():
             "total_price": booking.total_price,
             "remarks": booking.remarks,
             "status": booking.status.name,  # Convert Enum to string
+            "professional": booking.professional.user.name if booking.professional else "",
+            "completition_date": booking.completition_date.isoformat() if booking.completition_date else None,
             "requested_at": booking.request_date
         })
     return jsonify({"message":"Successfully fetched",
@@ -178,3 +337,31 @@ def cancel_booking(booking_id):
     except Exception as e:
         db.session.rollback()  # Rollback in case of an error
         return jsonify({"error": "An error occurred while canceling the booking.", "details": str(e)}), 500
+
+
+
+@user_bp.route('/profile', methods=['GET'])
+@auth_required('token')
+@roles_required('user')
+def get_profile():
+    """Fetch user profile details"""
+    user_id = int(current_user.id)  # Get user ID from JWT token
+
+    # Fetch professional details
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'user profile not found'}), 404
+
+    # Construct response data
+    profile_data = {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "mobile": user.mobile,
+        "profile_img_url": user.profile_img_url,
+   
+        "created_at": user.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        "updated_at": user.updated_at.strftime('%Y-%m-%d %H:%M:%S') if user.updated_at else None,
+    }
+    
+    return jsonify(profile_data), 200

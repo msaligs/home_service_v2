@@ -11,8 +11,15 @@ common_bp = Blueprint('common_bp', __name__)
 
 @common_bp.route('/get-locations', methods=['GET'])
 def get_location():
+    state = request.args.get('state', None)
+
     # filter and fetch category data from database which is active
-    locations = Location.query.filter_by(active=True).order_by(Location.city).all()
+    query = Location.query.filter_by(active=True) #.order_by(Location.city).all()
+
+    if state:
+        query = query.filter(Location.state == state)
+    
+    locations = query.order_by(Location.city).all()
 
     # return the data in json format
     return jsonify([{"id": c.id, "city": c.city, "state":c.state } for c in locations])
@@ -25,13 +32,14 @@ def service_location(location_id):
             and_(ServiceLocation.active == True, ServiceLocation.location_id == location_id)
         ).all()
 
-    # return the data in json format
-    # return jsonify([{"id": c.id, "name": c.name} for c in categories])
-    # return service_location
+    # if service locations are not found return empty list
+    if not service_locations:
+        return jsonify([])
+    
     return jsonify([
         {
-            "id": sl.category.id,
-            "name": sl.category.name
+            "id": sl.category.id if sl.category else None,
+            "name": sl.category.name if sl.category else None,
         }
         for sl in service_locations
     ])

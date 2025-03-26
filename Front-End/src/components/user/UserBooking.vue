@@ -62,16 +62,6 @@ export default {
             }
         }
 
-        // // Optional: Restore a canceled request to "PENDING" for testing purposes
-        // const restoreRequest = (requestId) => {
-        //     const index = serviceRequests.value.findIndex((req) => req.id === requestId)
-        //     if (index !== -1) {
-        //         serviceRequests.value[index].status = 'PENDING'
-        //         serviceRequests.value = [...serviceRequests.value] // Force reactivity
-        //         toast.success('✅ Request restored to PENDING.', { autoClose: 3000 })
-        //     }
-        // }
-
         const formatDate = (date) => {
             return new Date(date).toLocaleString()
         }
@@ -79,6 +69,7 @@ export default {
         const statusClass = (status) => {
             return {
                 'status-pending': status === 'PENDING',
+                'status-assigned': status === 'ASSIGNED',
                 'status-accepted': status === 'ACCEPTED',
                 'status-completed': status === 'COMPLETED',
                 'status-cancelled': status === 'CANCELLED',
@@ -90,7 +81,6 @@ export default {
         return {
             serviceRequests,
             confirmCancel,
-            // restoreRequest,
             formatDate,
             statusClass,
         }
@@ -110,6 +100,9 @@ export default {
                 <p><strong>Price:</strong> ₹{{ request.total_price.toFixed(2) }}</p>
                 <p><strong>Remarks:</strong> {{ request.remarks || 'No remarks' }}</p>
                 <p><strong>Request Date:</strong> {{ formatDate(request.requested_at) }}</p>
+                <p v-if="request.professional">
+                    <strong>Professional:</strong> {{ request.professional }}
+                </p>
                 <p v-if="request.completition_date">
                     <strong>Completion Date:</strong> {{ formatDate(request.completition_date) }}
                 </p>
@@ -121,14 +114,6 @@ export default {
                 >
                     Cancel Request
                 </button>
-
-                <!-- <button
-                    v-if="request.status === 'CANCELLED'"
-                    class="restore-btn"
-                    @click="restoreRequest(request.id)"
-                >
-                    Restore Request
-                </button> -->
             </div>
         </div>
         <p v-else class="no-requests">No service requests found.</p>
@@ -171,6 +156,12 @@ export default {
     border-radius: 5px;
 }
 
+.status-assigned {
+    background-color: #17a2b8;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
 .status-accepted {
     background-color: #007bff;
     color: white;

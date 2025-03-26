@@ -1,12 +1,28 @@
+# 🔹 Ignore Virtual Environment
 /env
+venv/
+
+# 🔹 Ignore Credentials and Secrets
 PAT
+
+# 🔹 Ignore Python Cache Files
 Back-End/**/__pycache__/
+Back-End/migrations/versions/__pycache__/
+Back-End/migrations/__pycache__/
 
-Back-End/instance/*
+# 🔹 Ignore Instance Files (Flask stores sensitive configs here)
+Back-End/instance/
 
-Back-End/*.csv
+# 🔹 Ignore CSV Files (Assuming they're temporary)
+# Back-End/*.csv
 
+# 🔹 Ignore Frontend Build & Config Files
 Front-End/node_modules/
 Front-End/.vscode/
 Front-End/.vite/
+Front-End/.eslintcache
 Front-End/*.log
+
+# 🔹 VSCode settings (Optional)
+.vscode/settings.json
+.vscode/tasks.json
