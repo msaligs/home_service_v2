@@ -27,3 +27,8 @@ Front-End/*.log
 .vscode/settings.json
 .vscode/tasks.json
 dump.rdb
+
+
+
+celery_tasks/__pycache__/
+celery_tasks/downloads/

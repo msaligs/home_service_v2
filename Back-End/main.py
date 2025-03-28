@@ -9,6 +9,8 @@ from flask_mail import Mail
 from flask_restful import Api
 from flask_migrate import Migrate
 from flask_caching import Cache
+from celery_tasks.celery_factory import celery_init_app
+import flask_excel as excel
 
 
 migrate = Migrate()
@@ -28,6 +30,8 @@ def create_app():
     api = Api(app)
     app.cache = cache
 
+    excel.init_excel(app)
+
     cors.CORS(app)
     with app.app_context():
         import application.views
@@ -35,16 +39,20 @@ def create_app():
         import application.routes.admin_routes as admin_routes
         import application.routes.professional_routes as professional_routes
         import application.routes.common_routes as common_routes
+        import application.routes.celery_routes as celery_routes
 
         app.register_blueprint(user_routes.user_bp, url_prefix='/api/user')
         app.register_blueprint(admin_routes.admin_bp, url_prefix='/api/admin')
         app.register_blueprint(professional_routes.professional_bp, url_prefix='/api/professional')
         app.register_blueprint(common_routes.common_bp, url_prefix='/api/common')
+        app.register_blueprint(celery_routes.celery_tasks_bp, url_prefix='/api/celery')
 
 
     return app
 
 app = create_app()
+
+celery_app = celery_init_app(app)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -56,7 +56,7 @@ def register_user():
 def get_user_address():
     user = current_user
     user_address = user.user_address[0] if user.user_address else None
-    print(user_address)
+
     if user_address:
         return jsonify({
             "message": "User address found",
