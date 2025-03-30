@@ -6,10 +6,19 @@ import { toast } from 'vue3-toastify'
 const city = ref('')
 const state = ref('')
 const loading = ref(false)
+const errors = ref({ city: '', state: '' }) // Track validation errors
+
+// Validate form fields
+const validateForm = () => {
+    errors.value.city = city.value.trim() ? '' : 'City name is required.'
+    errors.value.state = state.value.trim() ? '' : 'State name is required.'
+    return !errors.value.city && !errors.value.state // Return true if no errors
+}
 
 const addLocation = async () => {
-    if (!city.value.trim() || !state.value.trim()) {
-        toast.error('City and State are required!')
+    // Perform validation before submission
+    if (!validateForm()) {
+        toast.error('Please fix the errors before submitting!')
         return
     }
 
@@ -20,17 +29,13 @@ const addLocation = async () => {
 
         await api.post(
             '/api/admin/add-location',
-            {
-                city: city.value,
-                state: state.value,
-            },
-            {
-                headers: { 'Authentication-Token': token },
-            }
+            { city: city.value, state: state.value },
+            { headers: { 'Authentication-Token': token } }
         )
         toast.success('Location added successfully')
         city.value = ''
         state.value = ''
+        errors.value = { city: '', state: '' } // Clear errors after successful submission
     } catch (error) {
         toast.error('Failed to add location')
     } finally {
@@ -52,6 +57,7 @@ const addLocation = async () => {
                     class="form-control"
                     placeholder="Enter city name"
                 />
+                <small v-if="errors.city" class="text-danger">{{ errors.city }}</small>
             </div>
 
             <div class="mb-3">
@@ -62,6 +68,7 @@ const addLocation = async () => {
                     class="form-control"
                     placeholder="Enter state name"
                 />
+                <small v-if="errors.state" class="text-danger">{{ errors.state }}</small>
             </div>
 
             <button class="btn btn-primary" @click="addLocation" :disabled="loading">

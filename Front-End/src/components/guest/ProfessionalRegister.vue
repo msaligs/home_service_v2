@@ -41,6 +41,33 @@ const fetchCategoriesAndLocations = async () => {
 }
 
 const registerProfessional = async () => {
+    // Validate email format
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailPattern.test(professional.value.email)) {
+        toast.error('Please enter a valid email address.')
+        return
+    }
+
+    // Validate password length
+    if (professional.value.password.length < 6) {
+        toast.error('Password must be at least 6 characters long.')
+        return
+    }
+
+    // Validate mobile number (must be 10 digits)
+    const mobilePattern = /^\d{10}$/
+    if (!mobilePattern.test(professional.value.mobile)) {
+        toast.error('Mobile number must be exactly 10 digits.')
+        return
+    }
+
+    // Validate experience (should be a positive number)
+    if (professional.value.experience < 0) {
+        toast.error('Experience cannot be negative.')
+        return
+    }
+
+    // Validate category and location selection
     if (!professional.value.category_id || !professional.value.location_id) {
         toast.error('Please select a category and location.')
         return

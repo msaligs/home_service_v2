@@ -18,34 +18,35 @@ const loading = ref(false)
 
 // Validation function
 const validateUserData = () => {
+    // Validate name
     if (!user.value.name.trim()) {
         toast.error('Name is required.', { timeout: 3000 })
-
         return false
     }
 
+    // Validate email format using regex
     if (!/^\S+@\S+\.\S+$/.test(user.value.email)) {
         toast.error('Invalid email format.', { timeout: 3000 })
-
         return false
     }
 
+    // Validate mobile number (must be exactly 10 digits)
     if (!/^\d{10}$/.test(user.value.mobile)) {
         toast.error('Mobile number must be exactly 10 digits.', { timeout: 3000 })
-
         return false
     }
 
+    // Validate password length (must be at least 6 characters long)
     if (user.value.password.length < 6) {
         toast.error('Password must be at least 6 characters long.', { timeout: 3000 })
         return false
     }
 
-    return true
+    return true // Validation passed
 }
 
 const registerUser = async () => {
-    if (!validateUserData()) return
+    if (!validateUserData()) return // Stop if validation fails
 
     loading.value = true
 
@@ -64,7 +65,7 @@ const registerUser = async () => {
             toast.error('Registration failed. Try again.', { timeout: 3000 })
         }
     } catch (error) {
-        toast.error(error.response?.data?.error, { timeout: 3000 })
+        toast.error(error.response?.data?.error || 'An error occurred.', { timeout: 3000 })
     } finally {
         loading.value = false
     }
@@ -76,16 +77,19 @@ const registerUser = async () => {
         <h2 class="text-center mb-3">Create an Account</h2>
 
         <form @submit.prevent="registerUser">
+            <!-- Name Field -->
             <div class="mb-3">
                 <label for="name" class="form-label">Full Name</label>
                 <input type="text" id="name" class="form-control" v-model="user.name" required />
             </div>
 
+            <!-- Email Field -->
             <div class="mb-3">
                 <label for="email" class="form-label">Email Address</label>
                 <input type="email" id="email" class="form-control" v-model="user.email" required />
             </div>
 
+            <!-- Mobile Field -->
             <div class="mb-3">
                 <label for="mobile" class="form-label">Mobile Number</label>
                 <input
@@ -98,6 +102,7 @@ const registerUser = async () => {
                 />
             </div>
 
+            <!-- Password Field -->
             <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
                 <input
@@ -109,6 +114,7 @@ const registerUser = async () => {
                 />
             </div>
 
+            <!-- Submit Button -->
             <button type="submit" class="btn btn-primary w-100" :disabled="loading">
                 {{ loading ? 'Registering...' : 'Register' }}
             </button>
@@ -117,29 +123,6 @@ const registerUser = async () => {
                 Already have an account?
                 <router-link to="/auth">Login</router-link>
             </div>
-
-            <!-- Success / Error Messages -->
-            <div v-if="message" :class="`alert mt-3 ${messageType}`">
-                {{ message }}
-            </div>
         </form>
     </div>
 </template>
-
-<style scoped>
-.alert {
-    padding: 10px;
-    border-radius: 5px;
-    text-align: center;
-}
-
-.alert-success {
-    background-color: #d4edda;
-    color: #155724;
-}
-
-.alert-danger {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-</style>

@@ -12,6 +12,7 @@ const newCategory = ref({
 const loading = ref(false)
 
 const addCategory = async () => {
+    // Check if name and description are provided
     if (!newCategory.value.name || !newCategory.value.description) {
         toast.error('Name and description are required!')
         return
@@ -22,6 +23,7 @@ const addCategory = async () => {
         const token = localStorage.getItem('token')
         if (!token) throw new Error('Token missing!')
 
+        // Send API request to add category
         await api.post('/api/admin/add-category', newCategory.value, {
             headers: { 'Authentication-Token': token },
         })
@@ -69,13 +71,18 @@ const addCategory = async () => {
 </template>
 
 <style scoped>
+/* Container styles */
 .container {
     max-width: 500px;
     margin: auto;
 }
+
+/* Card styles */
 .card {
     border-radius: 8px;
 }
+
+/* Button styles */
 .btn {
     width: 100%;
 }

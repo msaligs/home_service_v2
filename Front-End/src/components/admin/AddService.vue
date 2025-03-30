@@ -10,6 +10,7 @@ const serviceCategory = ref('')
 const serviceBasePrice = ref('')
 const serviceImageUrl = ref('')
 const loading = ref(false)
+const errors = ref({ name: '', description: '', category: '', price: '' }) // Track validation errors
 
 // Fetch categories from backend
 const fetchCategories = async () => {
@@ -26,15 +27,25 @@ const fetchCategories = async () => {
     }
 }
 
+// Validate form fields
+const validateForm = () => {
+    errors.value.name = serviceName.value.trim() ? '' : 'Service name is required.'
+    errors.value.description = serviceDescription.value.trim() ? '' : 'Description is required.'
+    errors.value.category = serviceCategory.value ? '' : 'Category is required.'
+    errors.value.price =
+        serviceBasePrice.value && serviceBasePrice.value > 0 ? '' : 'Valid base price is required.'
+    return (
+        !errors.value.name &&
+        !errors.value.description &&
+        !errors.value.category &&
+        !errors.value.price
+    ) // Return true if no errors
+}
+
 // Submit new service
 const addService = async () => {
-    if (
-        !serviceName.value ||
-        !serviceDescription.value ||
-        !serviceCategory.value ||
-        !serviceBasePrice.value
-    ) {
-        toast.error('Please fill in all required fields')
+    if (!validateForm()) {
+        toast.error('Please fix the errors before submitting!')
         return
     }
 
@@ -64,6 +75,7 @@ const addService = async () => {
         serviceCategory.value = ''
         serviceBasePrice.value = ''
         serviceImageUrl.value = ''
+        errors.value = { name: '', description: '', category: '', price: '' } // Clear errors after successful submission
 
         // Refresh categories
         fetchCategories()
@@ -89,8 +101,8 @@ onMounted(fetchCategories)
                     type="text"
                     class="form-control"
                     placeholder="Enter service name"
-                    required
                 />
+                <small v-if="errors.name" class="text-danger">{{ errors.name }}</small>
             </div>
 
             <div class="mb-3">
@@ -100,18 +112,21 @@ onMounted(fetchCategories)
                     class="form-control"
                     placeholder="Enter service description"
                     rows="3"
-                    required
                 ></textarea>
+                <small v-if="errors.description" class="text-danger">{{
+                    errors.description
+                }}</small>
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Category <span class="text-danger">*</span></label>
-                <select v-model="serviceCategory" class="form-select" required>
+                <select v-model="serviceCategory" class="form-select">
                     <option value="" disabled>Select category</option>
                     <option v-for="category in categories" :key="category.id" :value="category.id">
                         {{ category.name }}
                     </option>
                 </select>
+                <small v-if="errors.category" class="text-danger">{{ errors.category }}</small>
             </div>
 
             <div class="mb-3">
@@ -121,8 +136,8 @@ onMounted(fetchCategories)
                     type="number"
                     class="form-control"
                     placeholder="Enter base price"
-                    required
                 />
+                <small v-if="errors.price" class="text-danger">{{ errors.price }}</small>
             </div>
 
             <div class="mb-3">

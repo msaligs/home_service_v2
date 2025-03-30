@@ -16,6 +16,10 @@
                                 required
                                 class="form-control"
                             />
+                            <!-- Added validation message for address length -->
+                            <small v-if="form.address.trim().length < 5" class="text-danger">
+                                Address must be at least 5 characters long.
+                            </small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">State</label>
@@ -47,10 +51,12 @@
                                 type="text"
                                 required
                                 class="form-control"
+                                @input="validatePincode"
                             />
-                            <small v-if="form.pincode && !isValidPincode" class="text-danger"
-                                >Invalid Pincode</small
-                            >
+                            <!-- Added validation message for pincode -->
+                            <small v-if="form.pincode && !isValidPincode" class="text-danger">
+                                Invalid Pincode
+                            </small>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" @click="$emit('close')">
@@ -80,7 +86,6 @@ const selectedState = ref('')
 const token = localStorage.getItem('token')
 const isValidPincode = ref(true)
 
-// ✅ Fetch locations from API
 const fetchLocations = async () => {
     try {
         const response = await api.get('/api/common/get-locations')
@@ -90,19 +95,19 @@ const fetchLocations = async () => {
     }
 }
 
-// ✅ Extract unique states for dropdown
 const uniqueStates = computed(() => {
     return [...new Set(locations.value.map((loc) => loc.state))]
 })
 
-// ✅ Filter cities based on selected state
 const filteredCities = computed(() => {
     return locations.value.filter((loc) => loc.state === selectedState.value)
 })
 
-// ✅ Validate Pincode
 const validatePincode = async () => {
-    if (!form.value.pincode) return
+    if (!form.value.pincode || form.value.pincode.length !== 6) {
+        isValidPincode.value = false
+        return
+    }
     try {
         const response = await api.get(`https://api.postalpincode.in/pincode/${form.value.pincode}`)
         isValidPincode.value = response.data[0].Status === 'Success'
@@ -112,10 +117,8 @@ const validatePincode = async () => {
     }
 }
 
-// ✅ Watch for pincode changes and validate
 watch(() => form.value.pincode, validatePincode)
 
-// ✅ Watch for address changes and reset form
 watch(
     () => props.address,
     (newAddress) => {
@@ -133,8 +136,9 @@ watch(
 
 const saveAddress = async () => {
     validatePincode()
-    if (!isValidPincode.value) {
-        alert('Invalid Pincode! Please enter a valid one before submitting.')
+    // Added validation check for address length before saving
+    if (!isValidPincode.value || form.value.address.trim().length < 5) {
+        alert('Please enter a valid address and pincode before submitting.')
         return
     }
     try {

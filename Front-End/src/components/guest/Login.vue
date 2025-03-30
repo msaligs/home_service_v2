@@ -8,11 +8,25 @@ import api from '../../api'
 
 const email = ref('')
 const password = ref('')
-
 const router = useRouter()
 // const toast = useToast()
 
+// Function to validate email format
+const isValidEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
 const login = () => {
+    // Frontend validation before making API call
+    if (!email.value || !password.value) {
+        toast.error('Email and Password are required!', { timeout: 3000 })
+        return
+    }
+    if (!isValidEmail(email.value)) {
+        toast.error('Invalid email format!', { timeout: 3000 })
+        return
+    }
+
     api.post('/user_login', {
         email: email.value,
         password: password.value,
@@ -60,6 +74,7 @@ const login = () => {
         })
 }
 </script>
+
 <template>
     <div>
         <h3 class="text-center mb-3">Login</h3>
