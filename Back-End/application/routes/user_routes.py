@@ -6,6 +6,7 @@ from application.sec import datastore
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import desc, and_
 from werkzeug.exceptions import BadRequest
+from celery_tasks.tasks import send_welcome_email
 
 user_bp = Blueprint('user_bp', __name__)
 
@@ -42,7 +43,7 @@ def register_user():
         
         )
         db.session.commit()  # Save to DB
-
+        send_welcome_email.delay(user.email,user.name)
         return jsonify({"message": "User registered successfully"}), 201
 
     except Exception as e:

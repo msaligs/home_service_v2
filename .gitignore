@@ -30,5 +30,5 @@ dump.rdb
 
 
 
-celery_tasks/__pycache__/
-celery_tasks/downloads/
+Back-End/celery_tasks/downloads/
+Back-End/celery_tasks/downloads/__pycache__/

@@ -1,7 +1,9 @@
+from flask import render_template
 from celery import shared_task
-from application.model import Category, Professional, Location, User, db
+from application.model import Category, Professional, Location, User, db,ServiceRequest, StatusEnum
 import flask_excel as excel
-from datetime import datetime
+from datetime import datetime, timedelta
+from celery_tasks.mail_service import send_email
 
 from application.model import IST
 
@@ -62,17 +64,88 @@ def export_professional():
     return f"professional_{time}.csv"
 
 
+@shared_task(ignore_result=False)
+def send_welcome_email(to_email, user_name):
+    """Send a welcome email using a Jinja template."""
+    subject = "Welcome to Home Service"
+    
+    # Render the Jinja template
+    email_body = render_template("welcome_email.html", user_name=user_name)
 
-# @shared_task(ignore_result=False)
-# def export_professional():
-#     professional = Professional.query.all()
-#     column_names = Professional.__table__.columns.keys()
-#     professional_data = excel.make_response_from_query_sets(professional, column_names=column_names, file_type="csv")
+    # Send the email
+    send_email(subject, email_body, to_email)
+    
 
-#     time = datetime.now(IST).strftime("%Y-%m-%d %H:%M")
-#     file_path = f"celery_tasks/downloads/professional_{time}.csv"
-#     with open(file_path,"wb") as file:
-#         file.write(professional_data.data)
-#     return f"professional_{time}.csv"
+@shared_task(ignore_result=True)
+def send_daily_service_request_emails():
+    """Fetch users who booked a service today and send them an email with their service status."""
+    today = datetime.now().date()
+
+    users = db.session.query(User).join(ServiceRequest).filter(ServiceRequest.status not in  [StatusEnum.REJECTED,StatusEnum.ACCEPTED]).all()
+
+    for user in users:
+
+        service_requests = db.session.query(ServiceRequest).filter(ServiceRequest.status not in  [StatusEnum.REJECTED,StatusEnum.ACCEPTED]).all()
+
+        if service_requests:
+            service_requests_data = [
+                {
+                    "service_name": req.service.name,
+                    "status": req.status.value,  # Convert Enum to string
+                    "date": req.request_date.strftime("%Y-%m-%d")
+                }
+                for req in service_requests
+            ]
+
+            email_body = render_template("daily_service_email.html", 
+                                         user_name=user.name, 
+                                         service_requests=service_requests_data)
+            send_email(
+                subject="Your Daily Service Request Status",
+                body=email_body,
+                to_email=user.email
+            )
 
 
+
+@shared_task(ignore_result=True)
+def send_monthly_service_request_emails():
+    """Fetch users who booked a service in the last 1 month and send them an email with their service status."""
+    today = datetime.now().date()
+    one_month_ago = today - timedelta(days=30)
+
+    users = db.session.query(User).join(ServiceRequest).filter(ServiceRequest.request_date >= one_month_ago).all()
+
+    for user in users:
+        service_requests = (
+            db.session.query(ServiceRequest)
+            .filter(ServiceRequest.user_id == user.id, ServiceRequest.request_date >= one_month_ago)
+            .all()
+        )
+
+        if service_requests:
+            service_requests_data = [
+                {
+                    "service_name": req.service.name,
+                    "status": req.status.value,  # Convert Enum to string
+                    "request date": req.request_date.strftime("%Y-%m-%d"),
+                    "completion date": req.completition_date.strftime("%Y-%m-%d") if req.completition_date else None,
+                    "professional_name": req.professional.user.name if req.professional else None,
+                    "city": req.locaation.city,
+                    "price": f"${req.total_price:.2f}",
+                }
+                for req in service_requests
+            ]
+
+            email_body = render_template(
+                "monthly_service_email.html", 
+                user_name=user.name, 
+                service_requests=service_requests_data
+            )
+
+            send_email(
+                subject="Your Monthly Service Request Summary",
+                body=email_body,
+                to_email=user.email
+            )
+            print(f"Email sent to {user.email} with monthly service request summary.")

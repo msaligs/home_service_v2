@@ -33,8 +33,15 @@ def create_app():
     excel.init_excel(app)
 
     cors.CORS(app)
+
+
+    celery_app = celery_init_app(app)  
+    # app.extensions["celery"] = celery_app
+
+
     with app.app_context():
         import application.views
+        from celery_tasks.celery_schedule import celery_app
         import application.routes.user_routes as user_routes
         import application.routes.admin_routes as admin_routes
         import application.routes.professional_routes as professional_routes
@@ -48,11 +55,11 @@ def create_app():
         app.register_blueprint(celery_routes.celery_tasks_bp, url_prefix='/api/celery')
 
 
-    return app
+    return app, celery_app
 
-app = create_app()
+app, celery_app = create_app()
 
-celery_app = celery_init_app(app)
+# celery_app = celery_init_app(app)
 
 if __name__ == '__main__':
     app.run(debug=True)
